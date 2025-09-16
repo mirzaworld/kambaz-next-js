@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function lab1() {
     return (
         <div id = "wd-lab1">
@@ -315,9 +317,8 @@ export default function lab1() {
             to go to the Github repository for this website. <br />
         
             <br />
-            Please 
-            <a href = "http://localhost:3000/labs/lab1" id = "wd-lab1-link" > click here </a>
-            to go to the Lab 1 page after running it on localhost.
+            
+            <Link href="/labs" id="wd-lab-link">Back</Link>
 
         </div>
     );
