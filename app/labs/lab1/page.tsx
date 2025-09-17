@@ -321,6 +321,13 @@ export default function lab1() {
             
             <Link href="/labs" id="wd-lab-link">Back</Link>
 
+            <div id = "wd-student-name"
+            style = {{ position: "fixed", bottom: "10px", right: "10px" }} >
+                First Name: Mirza Saad Ali <br />
+                Last Name: Baig <br />
+                ID: 2081980 <br />
+            </div>
+
         </div>
     );
 }
