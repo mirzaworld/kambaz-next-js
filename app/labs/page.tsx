@@ -24,8 +24,9 @@ export default function labs() {
                     <Link href = "/" id = "wd-kambaz-link" >
                     Kambaz </Link>
                 </li>
-
-            </ul> 
+                <label> <h6>First Name: </h6> Mirza Saad Ali <h6>Last Name: </h6> Baig </label>
+                {/*<label> <h6>Last Name: </h6> Baig </label>*/}
+            </ul>
         </div>
     );
 }

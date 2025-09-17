@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function lab1() {
     return (
@@ -199,11 +200,11 @@ export default function lab1() {
             <div id = "wd-images">
                 <h4>Image Tag</h4>
                 Loading an image from the internet: <br />
-                <img id = "wd-starship" width = "400" src = "https://staradvertiser.com/wp-content/uploads/2021/08/web1_Starship-gap2.jpg" alt = "Starship" />
+                <img id = "wd-starship" width = {400} height = {250} src = "https://staradvertiser.com/wp-content/uploads/2021/08/web1_Starship-gap2.jpg" alt = "Starship" />
                 <br />
                 Loading a local image:
                 <br />
-                <img id = "wd-teslabot" src = "/images/teslabot.jpg" height = "200px" alt = "Tesla bot thumbnail"/>
+                <Image id = "wd-teslabot" src = "/images/teslabot.jpg" width = {133} height = {200} alt = "Tesla bot thumbnail"/>
             </div>
 
             <div id = "wd-forms">

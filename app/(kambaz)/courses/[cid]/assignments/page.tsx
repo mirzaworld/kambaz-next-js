@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function assignments() {
   return (
     <div id = "wd-assignments">
@@ -11,23 +13,23 @@ export default function assignments() {
 
       <ul id = "wd-assignment-list" >
         <li className = "wd-assignment-list-item" >
-          <a href = "/courses/1234/assignments/123"
+          <Link href = "/courses/1234/assignments/123"
             className = "wd-assignment-link"
           >
             A1 - ENV + HTML
-          </a>
+          </Link>
         </li>
         <li className = "wd-assignment-list-item" >
-          <a href = "/courses/1234/assignments/124"
+          <Link href = "/courses/1234/assignments/124"
             className = "wd-assignment-link" >
             A2 - CSS + BOOTSTRAP
-          </a>
+          </Link>
         </li>
         <li className = "wd-assignment-list-item" >
-          <a href = "/courses/1234/assignments/125"
+          <Link href = "/courses/1234/assignments/125"
             className = "wd-assignment-link" >
             A3 - JavaScript + REACT
-          </a>
+          </Link>
         </li>
       </ul>
     </div>
