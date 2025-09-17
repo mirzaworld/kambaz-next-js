@@ -1,7 +1,6 @@
-export default function courses() {
-    return (
-        <div id = "wd-courses">
-            <h2> Course 1234 React JS </h2>
-        </div>
-    );
+import { redirect } from "next/navigation";
+
+export default async function CoursePage({ params,}: { params: Promise<{ cid: string }>,}) {
+    const { cid } = await params;
+    redirect(`/courses/${cid}/home`);
 }
