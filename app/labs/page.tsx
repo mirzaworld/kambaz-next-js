@@ -24,6 +24,7 @@ export default function labs() {
                     <Link href = "/" id = "wd-kambaz-link" >
                     Kambaz </Link>
                 </li>
+
             </ul> 
         </div>
     );

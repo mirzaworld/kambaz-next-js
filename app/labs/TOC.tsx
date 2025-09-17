@@ -27,6 +27,8 @@ export default function TOC() {
                 <Link href = "/" id = "wd-kambaz-link" >
                 Kambaz </Link>
             </li>
+
+            <li> <Link href = "https://github.com/mirzaworld/kambaz-next-js.git"> Github </Link> </li>
         </ul>
     );
 }
