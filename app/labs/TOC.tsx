@@ -29,6 +29,10 @@ export default function TOC() {
             </li>
 
             <li> <Link href = "https://github.com/mirzaworld/kambaz-next-js.git"> Github </Link> </li>
+
+            <li>
+                <Link href = "https://kambaz-next-js-sooty.vercel.app/labs"> Vercel </Link>
+            </li>
         </ul>
     );
 }
