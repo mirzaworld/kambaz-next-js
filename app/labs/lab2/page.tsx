@@ -1,5 +1,9 @@
 import "./index.css";
 import Link from "next/link";
+import BackgroundColors from "./backgroundColors";
+import ForegroundColors from "./foregroundColors";
+import Borders from "./borders";
+import Paddings from "./padding";
 
 export default function lab2() {
     return (
@@ -59,6 +63,14 @@ export default function lab2() {
                     </div>
                 </div>
             </div>
+            {/* Import from foregroundColors.tsx */}
+            <ForegroundColors />
+            {/* Import from backgroundColors.tsx */}
+            <BackgroundColors />
+            {/* Import from borders.tsx */}
+            <Borders />
+            {/* Import from paddings.tsx */}
+            <Paddings />
             <Link href="/labs"> Back </Link>
         </div>
     );
