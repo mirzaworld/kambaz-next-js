@@ -3,7 +3,16 @@ import Link from "next/link";
 import BackgroundColors from "./backgroundColors";
 import ForegroundColors from "./foregroundColors";
 import Borders from "./borders";
-import Paddings from "./padding";
+import Paddings from "./paddings";
+import Margins from "./margins";
+import Corners from "./corners";
+import Dimensions from "./dimensions";
+import Positions from "./positions";
+import Floating from "./float";
+import Zintex from "./zindex";
+import GridLayout from "./gridLayout";
+import Flexi from "./flex";
+import ReactIconsSampler from "./reactIcons";
 
 export default function lab2() {
     return (
@@ -71,6 +80,25 @@ export default function lab2() {
             <Borders />
             {/* Import from paddings.tsx */}
             <Paddings />
+            {/* Import from margins.tsx */}
+            <Margins />
+            {/* Import from corners.tsx */}
+            <Corners />
+            {/* Import from dimensions.tsx */}
+            <Dimensions />
+            {/* Import from positions.tsx*/}
+            <Positions />
+            {/* Import from zindex.tsx */}
+            <Zintex />
+            {/* Import from float.tsx */}
+            <Floating />
+            {/* Import from gridLayout.tsx */}
+            <GridLayout />
+            {/* Import from flex.tsx */}
+            <Flexi />
+            {/* React Icons Sampler */}
+            <ReactIconsSampler />
+            {/* Link back to labs page */}
             <Link href="/labs"> Back </Link>
         </div>
     );
