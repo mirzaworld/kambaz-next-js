@@ -64,7 +64,7 @@ export default function BootstrapForms() {
                         <FormControl type = "password" />
                     </Col>
                 </Row>
-                <Row className = "mb-3" controlId = "textarea2" >
+                <Row className = "mb-3" controlid = "textarea2" >
                     <FormLabel column sm = {2} > Bio </FormLabel>
                     <Col sm = {10} >
                         <FormControl as = "textarea" style = {{ height: "100px" }} />
