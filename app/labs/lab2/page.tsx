@@ -19,6 +19,7 @@ import ScreenSizeLabel from "./screenSizeLabel";
 import BootstrapTables from "./bootstrapTables";
 import BootstrapLists from "./bootstrapLists";
 import BootstrapForms from "./bootstrapForms";
+import BootstrapNavigation from "./bootstrapNavigation";
 
 export default function lab2() {
     return (
@@ -114,6 +115,8 @@ export default function lab2() {
             <BootstrapLists />
             {/* Import from bootstrapForms.tsx */}
             <BootstrapForms />
+            {/* Import from bootstrapNavigation.tsx */}
+            <BootstrapNavigation />
             {/* Link back to labs page */}
             <Link href="/labs"> Back </Link>
         </Container>
