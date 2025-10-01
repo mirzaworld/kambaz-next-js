@@ -13,10 +13,16 @@ import Zintex from "./zindex";
 import GridLayout from "./gridLayout";
 import Flexi from "./flex";
 import ReactIconsSampler from "./reactIcons";
+import { Container } from "react-bootstrap";
+import BootstrapGrids from "./bootstrapGrids";
+import ScreenSizeLabel from "./screenSizeLabel";
+import BootstrapTables from "./bootstrapTables";
+import BootstrapLists from "./bootstrapLists";
+import BootstrapForms from "./bootstrapForms";
 
 export default function lab2() {
     return (
-        <div id = "wd-lab2">
+        <Container>
             <h2> Lab 2 - Cascading Style Sheets </h2>
             <h3> Styling with the STYLE attribute </h3>
             <p>
@@ -98,9 +104,19 @@ export default function lab2() {
             <Flexi />
             {/* React Icons Sampler */}
             <ReactIconsSampler />
+            {/* Import from BootstrapGrids.tsx */}
+            <BootstrapGrids />
+            {/* Import from ScreenSizeLabel.tsx */}
+            <ScreenSizeLabel />
+            {/* Import from bootstrapTables.tsx */}
+            <BootstrapTables />
+            {/* Import from bootstrapLists.tsx */}
+            <BootstrapLists />
+            {/* Import from bootstrapForms.tsx */}
+            <BootstrapForms />
             {/* Link back to labs page */}
             <Link href="/labs"> Back </Link>
-        </div>
+        </Container>
     );
 
 }
