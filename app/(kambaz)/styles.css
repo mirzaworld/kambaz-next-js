@@ -8,7 +8,7 @@ body * {
 }
 
 @media (min-width: 768px) {
-    #wd-kambaz .wd-main-content {
+    #wd-kambaz .wd-main-content-offset {
         padding-left: 140px !important;
     }
 }
@@ -32,8 +32,18 @@ body * {
     border-left: 3px solid green !important;
 }
 
-/*.list-group.wd > .list-group-item.active {
+.list-group.wd > .list-group-item.active {
     color: black;
     background-color: white;
     border-left: 3px solid black !important;
-}*/
+}
+
+#wd-assignments .wd-assignment-list-item {
+    border-left: 3px solid green !important;
+}
+
+#wd-account-navigation.list-group.wd .list-group-item,
+#wd-account-navigation .list-group-item {
+    white-space: nowrap;
+    font-size: 1rem;
+}

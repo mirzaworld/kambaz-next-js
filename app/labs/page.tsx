@@ -4,6 +4,7 @@ export default function labs() {
     return (
         <div id = "wd-labs" >
             <h1> Labs </h1>
+            <div id= "wd-student-name" style = {{fontSize: "21px", color: "red" }} > Mirza Saad Ali Baig</div>
             <ul>
                 <li>
                     <Link href = "/labs/lab1" id = "wd-lab1-link">
@@ -24,8 +25,13 @@ export default function labs() {
                     <Link href = "/" id = "wd-kambaz-link" >
                     Kambaz </Link>
                 </li>
+
+                <li> 
+                    <Link id = "wd-github" href = "https://github.com/mirzaworld/kambaz-next-js" target = "_blank" rel = "noreferrer"> My Github Repository </Link>
+                </li>
                 
             </ul>
+            
         </div>
     );
 }

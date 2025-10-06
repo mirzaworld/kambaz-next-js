@@ -5,6 +5,7 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Card from "react-bootstrap/Card";
 import Button from "react-bootstrap/Button";
+import { CardText, CardImg, CardTitle, CardBody } from "react-bootstrap";
 
 export default function Dashboard() {
     return (
@@ -21,16 +22,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style={{ width: "300px" }}>
                         <Card>
                             <Link href = "/courses/1234" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/reactjs.jpg" width = "100%" height = {160} alt = "React JS course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
+                                <CardImg variant = "top" src = "/images/reactjs.jpg" width = "100%" height = {160} alt = "React JS course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
                                         CS1234 React JS
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Full Stack Software Developer
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary" > Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -39,16 +40,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }}>
                         <Card>
                             <Link href = "/courses/1235" className = "wd-dashboard-course-link text-decoration-none text-dark">
-                                <Card.Img variant = "top" src = "/images/python.jpg" width = "100%" height = {160} alt = "Python course thumbnail" />
-                                <Card.Body> 
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
+                                <CardImg variant = "top" src = "/images/python.jpg" width = "100%" height = {160} alt = "Python course thumbnail" />
+                                <CardBody> 
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
                                         CS1235 Python
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Data Science and Machine Learning
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary" > Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -57,16 +58,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }}>
                         <Card>
                             <Link href = "/courses/1236" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/javascript.jpg" width = "100%" height = {160} alt = "JavaScript course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
+                                <CardImg variant = "top" src = "/images/javascript.jpg" width = "100%" height = {160} alt = "JavaScript course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
                                         CS1236 JavaScript
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Frontend Web Development
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary" > Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -75,16 +76,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }} >
                         <Card>
                             <Link href = "/courses/1237" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/java.jpg" width = "100%" height = {160} alt = "Java course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden">
+                                <CardImg variant = "top" src = "/images/java.jpg" width = "100%" height = {160} alt = "Java course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden">
                                         CS1237 Java
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Backend Web Development
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary"> Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -93,16 +94,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }} >
                         <Card>
                             <Link href = "/courses/1238" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/cpp.jpg" width = "100%" height = {160} alt = "C++ course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
+                                <CardImg variant = "top" src = "/images/cpp.jpg" width = "100%" height = {160} alt = "C++ course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
                                         CS1238 C++
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Competitive Programming
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary"> Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -111,16 +112,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }} >
                         <Card>
                             <Link href = "/courses/1239" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/htmlcss.jpg" width = "100%" height = {160} alt = "HTML & CSS course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
+                                <CardImg variant = "top" src = "/images/htmlcss.jpg" width = "100%" height = {160} alt = "HTML & CSS course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden" >
                                         CS1239 HTML & CSS
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Web Design and Development
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary"> Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>
@@ -129,16 +130,16 @@ export default function Dashboard() {
                     <Col className = "wd-dashboard-course" style = {{ width: "300px" }} >
                         <Card>
                             <Link href = "/courses/1240" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/datascience.jpg" width = "100%" height = {160} alt = "Data Science course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden">
+                                <CardImg variant = "top" src = "/images/datascience.jpg" width = "100%" height = {160} alt = "Data Science course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden">
                                         CS1240 Data Science
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style = {{ height: "100px" }} >
                                         Data Analysis and Visualization
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary"> Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col> 
@@ -147,16 +148,16 @@ export default function Dashboard() {
                     <Col className="wd-dashboard-course" style = {{ width: "300px" }} >
                         <Card>
                             <Link href = "/courses/1241" className = "wd-dashboard-course-link text-decoration-none text-dark" >
-                                <Card.Img variant = "top" src = "/images/machinelearning.jpg" width = "100%" height = {160} alt = "Machine Learning course thumbnail" />
-                                <Card.Body>
-                                    <Card.Title className = "wd-dashboard-course-title text-nowrap overflow-hidden">
+                                <CardImg variant = "top" src = "/images/machinelearning.jpg" width = "100%" height = {160} alt = "Machine Learning course thumbnail" />
+                                <CardBody>
+                                    <CardTitle className = "wd-dashboard-course-title text-nowrap overflow-hidden">
                                         CS1241 Machine Learning
-                                    </Card.Title>
-                                    <Card.Text className = "wd-dashboard-course-description overflow-hidden" style={{ height: "100px" }} >
+                                    </CardTitle>
+                                    <CardText className = "wd-dashboard-course-description overflow-hidden" style={{ height: "100px" }} >
                                         AI and Machine Learning
-                                    </Card.Text>
+                                    </CardText>
                                     <Button variant = "primary"> Go </Button>
-                                </Card.Body>
+                                </CardBody>
                             </Link>
                         </Card>
                     </Col>

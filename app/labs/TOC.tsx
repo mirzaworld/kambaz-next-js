@@ -20,7 +20,7 @@ export default function TOC() {
                 <NavLink href = "/" as = {Link} > Kambaz </NavLink>
             </NavItem>
             <NavItem>
-                <NavLink href = "https://github.com/mirzaworld/kambaz-next-js" as = {Link} > My GitHub </NavLink>
+                <NavLink href = "https://github.com/mirzaworld/kambaz-next-js" id = "wd-github" as = {Link} > GitHub </NavLink>
             </NavItem>
             <NavItem>
                 <NavLink href = "https://kambaz-next-js-sooty.vercel.app" as = {Link} > Vercel </NavLink>
