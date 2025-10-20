@@ -1,20 +1,34 @@
 {
-  "extends": "next/core-web-vitals",
+  "root": true,
+  "extends": ["next/core-web-vitals"],
   "overrides": [
     {
-      "files": ["app/labs/**/*.ts", "app/labs/**/*.tsx"],
+      "files": [
+        "app/(kambaz)/courses/**/assignments/**/*.tsx",
+        "app/(kambaz)/courses/**/modules/**/*.tsx",
+        "app/(kambaz)/courses/**/people/**/*.tsx",
+        "app/(kambaz)/courses/**/layout.tsx"
+      ],
       "rules": {
-        "prefer-const": "off",
-        "no-var": "off"
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    },
+    {
+      "files": ["app/labs/lab3/**/*.tsx"],
+      "rules": {
+        "prefer-const": "off"
       }
     },
     {
       "files": [
-        "app/(kambaz)/**/*.ts",
-        "app/(kambaz)/**/*.tsx"
+        "app/**/**.tsx",
+        "app/**/**.ts"
       ],
       "rules": {
-        "@typescript-eslint/no-explicit-any": "off"
+
+        "@next/next/no-img-element": "warn",
+        "jsx-a11y/alt-text": "warn",
+        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
       }
     }
   ]
