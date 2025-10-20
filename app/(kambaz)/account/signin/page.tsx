@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormControl } from "react-bootstrap";
-import Button from "react-bootstrap/Button";
 
 export default function Signin() {
   return (

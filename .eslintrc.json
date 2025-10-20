@@ -1,0 +1,18 @@
+{
+  "extends": "next/core-web-vitals",
+  "overrides": [
+    {
+      "files": [ "app/labs/**/*.{ts,tsx}" ],
+      "rules": {
+        "prefer-const": "off",
+        "no-var": "off"
+      }
+    },
+    {
+      "files": [ "app/(kambaz)/**/*.{ts,tsx}" ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
+}

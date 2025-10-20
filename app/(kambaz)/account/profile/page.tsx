@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormSelect, FormControl } from "react-bootstrap";
-import Button from "react-bootstrap/Button";
 
 export default function Profile() {
   return (
