@@ -2,14 +2,17 @@
   "extends": "next/core-web-vitals",
   "overrides": [
     {
-      "files": [ "app/labs/**/*.{ts,tsx}" ],
+      "files": ["app/labs/**/*.ts", "app/labs/**/*.tsx"],
       "rules": {
         "prefer-const": "off",
         "no-var": "off"
       }
     },
     {
-      "files": [ "app/(kambaz)/**/*.{ts,tsx}" ],
+      "files": [
+        "app/(kambaz)/**/*.ts",
+        "app/(kambaz)/**/*.tsx"
+      ],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off"
       }
