@@ -4,7 +4,7 @@ export default function TernaryOperator () {
     return (
         <div id = "wd-ternary-operator">
             <h4> Logged In </h4>
-            { LoggedIn ? <o> Welcome </o> : <p> Please Login </p> } <hr />
+            { LoggedIn ? <p> Welcome </p> : <p> Please Login </p> } <hr />
         </div>
     );
 }

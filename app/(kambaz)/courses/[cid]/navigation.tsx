@@ -1,75 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useParams } from "next/navigation";
+import React from "react";
+
+
+const labels = [ "Home", "Modules", "Piazza", "Zoom", "Assignments", "Quizzes", "Grades", "People" ];
+
+const segmentOf = (label : string) => {
+    switch (label) {
+        case "Home" : return "home";
+        case "Modules" : return "modules";
+        case "Piazza" : return "piazza";
+        case "Zoom" : return "zoom";
+        case "Assignments" : return "assignments";
+        case "Quizzes" : return "quizzes";
+        case "Grades" : return "grades";
+        case "People" : return "people/table"; // preserve your current route
+        default : return label.toLowerCase();
+    }
+};
+
+
+const idOf = (label : string) => {
+    switch (label) {
+        case "Home" : return "wd-course-home-link";
+        case "Modules" : return "wd-course-modules-link";
+        case "Piazza" : return "wd-course-piazza-link";
+        case "Zoom" : return "wd-course-zoom-link";
+        case "Assignments" : return "wd-course-assignments-link";
+        case "Quizzes" : return "wd-course-quizzes-link";
+        case "Grades" : return "wd-course-grades-link";
+        case "People" : return "wd-course-people-link";
+        default : return `wd-course-${ label.toLowerCase() }-link`;
+    }
+};
 
 export default function CourseNavigation() {
-  
-  const pathname = (usePathname() || "").toLowerCase();
-  
-  const parts = pathname.split("/");
-  const cid = parts[2] || "1234";
+    const pathname = ( usePathname() || "" ).toLowerCase();
+    const { cid } = useParams<{ cid : string }>();
 
-  const isActive = (segment: string) => {
-    const href = `/courses/${cid}/${segment}`;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
+    const isActive = (label : string) => {
+        const seg = segmentOf( label );
+        const href = `/courses/${ cid }/${ seg }`.toLowerCase();
+        if (label === "People") {
+            const peopleBase = `/courses/${ cid }/people`.toLowerCase();
+            return pathname === href || pathname.startsWith( peopleBase + "/" );
+        }
+        return pathname === href || pathname.startsWith( href + "/" );
+    };
 
   return (
     <div id = "wd-courses-navigation" className = "wd list-group fs-5 rounded-0">
 
-        <Link href = {`/courses/${cid}/home`} id = "wd-course-home-link" className = {`list-group-item ${isActive("home") ? "active" : "text-danger"} border-0`}>
-            Home
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/modules`}
-            id = "wd-course-modules-link"
-            className = {`list-group-item ${isActive("modules") ? "active" : "text-danger"} border-0`}>
-                Modules
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/piazza`}
-            id = "wd-course-piazza-link"
-            className = {`list-group-item ${isActive("piazza") ? "active" : "text-danger"} border-0`}>
-                Piazza
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/zoom`}
-            id = "wd-course-zoom-link"
-            className = {`list-group-item ${isActive("zoom") ? "active" : "text-danger"} border-0`}>
-                Zoom
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/assignments`}
-            id = "wd-course-assignments-link"
-            className = {`list-group-item ${isActive("assignments") ? "active" : "text-danger"} border-0`}>
-                Assignments
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/quizzes`}
-            id = "wd-course-quizzes-link"
-            className = {`list-group-item ${isActive("quizzes") ? "active" : "text-danger"} border-0`}>
-                Quizzes
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/grades`}
-            id = "wd-course-grades-link"
-            className = {`list-group-item ${isActive("grades") ? "active" : "text-danger"} border-0`}>
-                Grades
-        </Link> <br />
-
-        <Link
-            href = {`/courses/${cid}/people/table`}
-            id = "wd-course-people-link"
-            className = {`list-group-item ${pathname.startsWith(`/courses/${cid}/people`) ? "active" : "text-danger"} border-0`}>
-                People
-        </Link> <br />
-        </div>
-    );
+        { labels.map( (label) => {
+            const seg = segmentOf( label );
+            const href = `/courses/${ cid }/${ seg }`;
+            const id = idOf( label );
+            const cls = `list-group-item ${ isActive( label ) ? "active" : "text-danger" } border-0`;
+            return (
+                <React.Fragment key = { id }>
+                    <Link href = { href } id = { id } className = { cls }>
+                        { " " } { label } { " " }
+                    </Link> <br />
+                </React.Fragment>
+            );
+        })}
+    </div>
+  );
 }

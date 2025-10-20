@@ -1,155 +1,148 @@
-'use client';
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 
+import { assignments as allAssignments } from "../../../../../database";
+
+type Assignment = {
+  _id : string ;
+  title : string ;
+  course : string ;
+  description? : string ;
+  points? : number ;
+  dueDate? : string ;
+  availableFrom? : string ;
+  availableUntil? : string ;
+};
+
 export default function Editor() {
+  const { cid, aid } = useParams<{ cid : string ; aid : string }>();
+
+  const assignment : Assignment | undefined = ( Array.isArray( allAssignments ) ? allAssignments : [] ).find(
+    ( a : any ) =>
+      String( a.course || "" ).toLowerCase() === String( cid ).toLowerCase() &&
+      String( a._id || "" ).toLowerCase() === String( aid ).toLowerCase()
+  );
+
+  const title = assignment?.title || `Assignment ${ aid }`;
+  const description =
+    assignment?.description ||
+    `The assignment is available online. Submit a link to the landing page of your Web application running on Netlify.
+
+The landing page should include:
+• Your full name and section
+• Links to each of the lab assignments
+• Link to the Kambaz application
+• Links to all relevant source code repositories`;
+  const points = assignment?.points ?? 100;
+  const dueDate = assignment?.dueDate || "2025-09-30";
+  const availableFrom = assignment?.availableFrom || "2025-09-15";
+  const availableUntil = assignment?.availableUntil || "2025-10-15";
+
   return (
     <div id = "wd-assignments-editor" className = "p-2">
       <Form>
+        {/* Name */}
         <Form.Group className = "mb-3" controlId = "wd-name">
           <Form.Label> Assignment Name </Form.Label>
-          <Form.Control defaultValue = "A1 - ENV + HTML" />
+          <Form.Control defaultValue = { title } />
         </Form.Group>
 
+        {/* Description */}
         <Form.Group className = "mb-3" controlId = "wd-description">
           <Form.Label> Description </Form.Label>
-          <Form.Control as = "textarea" rows = {5} defaultValue = {
-        `The assignment is available online. Submit a link to the landing page of your Web application running on Netlify.
-
-          The landing page should include:
-          • Your full name and section
-          • Links to each of the lab assignments
-          • Link to the Kambaz application
-          • Links to all relevant source code repositories`
-          }/>
+          <Form.Control as = "textarea" rows = { 5 } defaultValue = { description } />
         </Form.Group>
 
-        <table className = "table w-auto">
-          <tbody>
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-points" className = "col-form-label">
-                  Points
-                </label>
-              </td>
 
-              <td>
-                <Form.Control id = "wd-points" defaultValue = {100} />
-              </td>
-            </tr>
+        {/* Points */}
+        <div className = "row mb-3">
+          <div className = "d-none d-md-flex col-md-3 col-lg-2 justify-content-end align-items-center">
+            <span className = "col-form-label"> Points </span>
+          </div>
+          <div className = "col-12 col-md-9 col-lg-10">
+            <Form.Control id = "wd-points" type = "number" defaultValue = { points } style = {{ width : "100%" }} />
+          </div>
+        </div>
 
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-group" className = "col-form-label">
-                  Assignment Group
-                </label>
-              </td>
-              
-              <td>
-                <Form.Select id = "wd-group" defaultValue = "ASSIGNMENTS">
-                  <option>ASSIGNMENTS</option>
-                  <option>QUIZZES</option>
-                  <option>EXAMS</option>
-                  <option>PROJECT</option>
-                </Form.Select>
-              </td>
-            </tr>
+        {/* Assignment Group */}
+        <div className = "row mb-3">
+          <div className = "d-none d-md-flex col-md-3 col-lg-2 justify-content-end align-items-center">
+            <span className = "col-form-label"> Assignment Group </span>
+          </div>
+          <div className = "col-12 col-md-9 col-lg-10">
+            <Form.Select id = "wd-group" defaultValue = "ASSIGNMENTS" style = {{ width : "100%" }}>
+              <option> ASSIGNMENTS </option>
+              <option> QUIZZES </option>
+              <option> EXAMS </option>
+              <option> PROJECT </option>
+            </Form.Select>
+          </div>
+        </div>
 
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-display-grade-as" className = "col-form-label">
-                  Display Grade As
-                </label>
-              </td>
-              
-              <td>
-                <Form.Select id = "wd-display-grade-as" defaultValue = "Points">
-                  <option>Points</option>
-                  <option>Percentage</option>
-                  <option>Letter Grade</option>
-                  <option>GPA</option>
-                  <option>Complete/Incomplete</option>
-                </Form.Select>
-              </td>
-            </tr>
+        {/* Display Grade As */}
+        <div className = "row mb-3">
+          <div className = "d-none d-md-flex col-md-3 col-lg-2 justify-content-end align-items-center">
+            <span className = "col-form-label"> Display Grade As </span>
+          </div>
+          <div className = "col-12 col-md-9 col-lg-10">
+            <Form.Select id = "wd-display-grade-as" defaultValue = "Percentage" style = {{ width : "100%" }}>
+              <option> Points </option>
+              <option> Percentage </option>
+              <option> Letter Grade </option>
+              <option> GPA </option>
+              <option> Complete/Incomplete </option>
+            </Form.Select>
+          </div>
+        </div>
 
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-submission-type" className = "col-form-label">
-                  Submission Type
-                </label>
-              </td>
-              
-              <td>
-                <Form.Select id = "wd-submission-type" defaultValue = "Online" className = "mb-2">
-                  <option>Online</option>
-                  <option>On Paper</option>
-                  <option>External Tool</option>
-                </Form.Select>
+        <div className = "row mb-3">
+          <div className = "d-none d-md-flex col-md-3 col-lg-2 justify-content-end align-items-start">
+            <span className = "col-form-label"> Assign </span>
+          </div>
+          <div className = "col-12 col-md-9 col-lg-10">
+            <div className = "border rounded p-3">
+              <Form.Label htmlFor = "wd-assign-to" className = "fw-semibold"> Assign to </Form.Label>
+              <Form.Control id = "wd-assign-to" className = "mb-3" defaultValue = "Everyone" />
 
-                <div>
-                  <Form.Check id = "wd-text-entry" label = "Text Entry" />
-                  <Form.Check id = "wd-website-url" label = "Website URL" />
-                  <Form.Check id = "wd-media-recordings" label = "Media Recordings" />
-                  <Form.Check id = "wd-student-annotation" label = "Student Annotation" />
-                  <Form.Check id = "wd-file-upload" label = "File Uploads" />
+              <div className = "row g-3">
+                <div className = "col-12">
+                  <Form.Label htmlFor = "wd-due-date" className = "fw-semibold"> Due </Form.Label>
+                  <Form.Control id = "wd-due-date" type = "date" defaultValue = { dueDate } />
                 </div>
-              </td>
-            </tr>
 
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-assign-to" className = "col-form-label">
-                  Assign To
-                </label>
-              </td>
-              
-              <td>
-                <Form.Control id = "wd-assign-to" defaultValue = "Everyone" />
-              </td>
-            </tr>
+                <div className = "col-12 col-md-6">
+                  <Form.Label htmlFor = "wd-available-from" className = "fw-semibold"> Available from </Form.Label>
+                  <Form.Control id = "wd-available-from" type = "date" defaultValue = { availableFrom } />
+                </div>
 
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-due-date" className = "col-form-label">
-                  Due
-                </label>
-              </td>
-              <td>
-                <Form.Control id = "wd-due-date" type = "date" defaultValue = "2025-09-30" />
-              </td>
-            </tr>
-
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-available-from" className = "col-form-label">
-                  Available From
-                </label>
-              </td>
-              <td>
-                <Form.Control id = "wd-available-from" type = "date" defaultValue = "2025-09-15" />
-              </td>
-            </tr>
-
-            <tr>
-              <td className = "text-end align-top">
-                <label htmlFor = "wd-available-until" className = "col-form-label">
-                  Available Until
-                </label>
-              </td>
-              <td>
-                <Form.Control id = "wd-available-until" type = "date" defaultValue = "2025-10-15" />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <div className = "col-12 col-md-6">
+                  <Form.Label htmlFor = "wd-available-until" className = "fw-semibold"> Until </Form.Label>
+                  <Form.Control id = "wd-available-until" type = "date" defaultValue = { availableUntil } />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className = "mt-3">
-          <Button variant = "secondary" className = "me-2">
+          <Button
+            as = { Link }
+            href = { `/courses/${ cid }/assignments` }
+            variant = "secondary"
+            className = "me-2"
+          >
             Cancel
           </Button>
-          <Button variant = "primary">
+          <Button
+            as = { Link }
+            href = { `/courses/${ cid }/assignments` }
+            variant = "danger"
+          >
             Save
           </Button>
         </div>
