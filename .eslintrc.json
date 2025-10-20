@@ -4,28 +4,32 @@
   "overrides": [
     {
       "files": [
-        "app/(kambaz)/courses/**/assignments/**/*.tsx",
-        "app/(kambaz)/courses/**/modules/**/*.tsx",
-        "app/(kambaz)/courses/**/people/**/*.tsx",
-        "app/(kambaz)/courses/**/layout.tsx"
+        // lower-case variant (what your build log showed)
+        "app/(kambaz)/courses/**/assignments/**/*.{ts,tsx}",
+        "app/(kambaz)/courses/**/modules/**/*.{ts,tsx}",
+        "app/(kambaz)/courses/**/people/**/*.{ts,tsx}",
+        "app/(kambaz)/courses/**/layout.{ts,tsx}",
+        // upper/mixed-case fallback (in case your repo still has these on Mac)
+        "app/(Kambaz)/Courses/**/assignments/**/*.{ts,tsx}",
+        "app/(Kambaz)/Courses/**/modules/**/*.{ts,tsx}",
+        "app/(Kambaz)/Courses/**/people/**/*.{ts,tsx}",
+        "app/(Kambaz)/Courses/**/layout.{ts,tsx}"
       ],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off"
       }
     },
     {
-      "files": ["app/labs/lab3/**/*.tsx"],
+      "files": [
+        "app/labs/lab3/**/*.{ts,tsx}"
+      ],
       "rules": {
         "prefer-const": "off"
       }
     },
     {
-      "files": [
-        "app/**/**.tsx",
-        "app/**/**.ts"
-      ],
+      "files": ["app/**/*.{ts,tsx}"],
       "rules": {
-
         "@next/next/no-img-element": "warn",
         "jsx-a11y/alt-text": "warn",
         "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
