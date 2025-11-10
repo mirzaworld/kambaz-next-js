@@ -19,7 +19,11 @@ export default function Modules() {
 
   return (
     <div>
-      <ModulesControls /> <br /> <br /> <br /> <br />
+      <ModulesControls
+        moduleName = { moduleName }
+        setModuleName = { setModuleName}
+        addModule = { addModule }
+       /> <br /> <br /> <br /> <br />
 
       <ListGroup id = "wd-modules" className = "rounded-0">
         { modules.map( ( module : any ) => (
