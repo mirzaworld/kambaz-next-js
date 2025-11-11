@@ -19,6 +19,8 @@ export type Module = {
   description?: string;
   course: string;
   lessons?: Lesson[];
+  // UI-only flag used by editors
+  editing?: boolean;
 };
 
 export type Assignment = {

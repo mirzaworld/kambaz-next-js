@@ -32,6 +32,18 @@ body * {
     border-left: 3px solid green !important;
 }
 
+/* Make module title have the green left accent like lessons */
+.wd-module .wd-title {
+    border-left: 6px solid green !important;
+    padding-left: 0.75rem;
+}
+
+/* Slightly larger module title area and remove tight icon overlap */
+.wd-title svg { vertical-align: middle; }
+
+/* make the assignment title and meta align with icons */
+.wd-assignment-link .fw-bold { font-size: 1.05rem; }
+
 .list-group.wd > .list-group-item.active {
     color: black;
     background-color: white;

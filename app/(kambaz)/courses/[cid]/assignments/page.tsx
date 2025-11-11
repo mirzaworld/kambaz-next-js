@@ -17,13 +17,31 @@ import { HiOutlinePencilAlt } from "react-icons/hi";
 import { BsSearch, BsThreeDotsVertical, BsGripVertical } from "react-icons/bs";
 
 import { assignments as allAssignments } from "../../../database";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../../store";
+import { addAssignment, deleteAssignment } from "./reducer";
+import type { Assignment } from "../../../types";
 
 export default function Assignments() {
   const { cid } = useParams<{ cid : string }>();
 
-  const items = ( Array.isArray( allAssignments ) ? allAssignments : [] ).filter(
-    ( a : any ) => String( a.course || "" ).toLowerCase() === String( cid ).toLowerCase()
+  const all = useSelector(( state: RootState ) => ( state.assignmentsReducer )?.assignments || allAssignments );
+  const dispatch = useDispatch();
+
+  const items = ( Array.isArray( all ) ? all : [] ).filter(
+    ( a : Assignment ) => String( a.course || "" ).toLowerCase() === String( cid ).toLowerCase()
   );
+
+  const add = ( title: string ) => {
+    const t = String( title || "" ).trim();
+    if ( !t ) return;
+    dispatch( addAssignment( { title: t, course: cid } ) );
+  };
+
+  const addPrompt = () => {
+    const title = window.prompt( "New assignment title" );
+    if ( title ) add( title );
+  };
 
   return (
     <div id = "wd-assignments" className = "pt-2">
@@ -38,9 +56,10 @@ export default function Assignments() {
           <Button id = "wd-add-assignment-group" variant = "secondary" className = "me-2">
             <FaPlus className = "me-2" /> Group
           </Button>
-          <Button id = "wd-add-assignment" variant = "danger">
+          <Button id = "wd-add-assignment" variant = "danger" onClick = { addPrompt } className = "me-2">
             <FaPlus className = "me-2" /> Assignment
           </Button>
+          <Button size = "sm" variant = "light" className = "border"> <BsThreeDotsVertical /> </Button>
         </Col>
       </Row>
 
@@ -61,7 +80,7 @@ export default function Assignments() {
         </Card.Header>
 
         <ListGroup variant = "flush" id = "wd-assignment-list">
-          { items.map( ( a : any, idx : number ) => (
+          { items.map( ( a : Assignment ) => (
             <ListGroup.Item
               key = { a._id }
               className = "wd-assignment-list-item border-0 border-start border-success ps-3"
@@ -84,7 +103,7 @@ export default function Assignments() {
                   </div>
                 </div>
                 <FaCheckCircle className = "ms-2 text-success" />
-                <BsThreeDotsVertical className = "ms-2 text-secondary" />
+                <button className = "btn btn-sm btn-outline-danger ms-2" onClick = { () => dispatch( deleteAssignment( a._id ) ) }>Delete</button>
               </div>
             </ListGroup.Item>
           ))}
@@ -96,6 +115,7 @@ export default function Assignments() {
           )}
         </ListGroup>
       </Card>
+  {/* Assignment added alert removed (using prompt-add flow). */}
     </div>
   );
 }

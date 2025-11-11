@@ -2,7 +2,7 @@
 
 import React from "react";
 import { usePathname } from "next/navigation";
-import { FaAlignJustify } from "react-icons/fa6";
+import { FaAlignJustify } from "react-icons/fa";
 
 const labelMap : Record<string, string> = {
   home : "Home",
@@ -16,7 +16,7 @@ const labelMap : Record<string, string> = {
 };
 
 export default function Breadcrumb(
-  { course } : { course : { name : string } | undefined }
+  { course, onToggle } : { course : { name : string } | undefined; onToggle? : () => void }
 ) {
     const pathname = ( usePathname() || "" ).toLowerCase();
 
@@ -36,7 +36,13 @@ export default function Breadcrumb(
 
     return (
         <h2 className = "text-danger">
-        <FaAlignJustify className = "me-4 fs-4 mb-1" />
+        <FaAlignJustify
+          className = "me-4 fs-4 mb-1"
+          role = "button"
+          style = {{ cursor: onToggle ? "pointer" : "default" }}
+          onClick = { () => onToggle && onToggle() }
+          aria-controls = "wd-courses-navigation"
+        />
         { " " } { course?.name || "" }
         { sectionLabel ? ` > ${ sectionLabel }` : "" } { " " }
         </h2>

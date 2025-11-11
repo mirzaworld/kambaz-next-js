@@ -18,18 +18,22 @@ export default function ModuleControlButtons (
     }
 ) {
     return (
-        <div className = "float-end" >
+        <div className = "d-inline-flex align-items-center gap-3 ms-auto text-nowrap flex-shrink-0" >
             <FaPencil
                 onClick = {() => editModule( moduleId )}
-                className = "text-primary me-3"
+                className = "text-primary fs-4"
+                role = "button"
+                aria-label = "Edit module"
             />
             <FaTrash
-                className = "text-danger me-2 mb-1"
+                className = "text-danger fs-4"
                 onClick = {() => deleteModule( moduleId )}
+                role = "button"
+                aria-label = "Delete module"
             />
             <GreenCheckmark />
-            <BsPlus className = "fs-1" />
-            <IoEllipsisVertical className = "fs-4" />
+            <BsPlus className = "fs-4 text-dark" role = "button" aria-label = "Add item" />
+            <IoEllipsisVertical className = "fs-4 text-dark" role = "button" aria-label = "More options" />
         </div>
     );
 }

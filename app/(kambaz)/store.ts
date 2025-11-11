@@ -1,12 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
-import coursesReducer from "./Courses/reducer";
-import modulesReducer from "./Courses/[cid]/Modules/reducer";
-import accountReducer from "./Account/reducer";
+import coursesReducer from "./courses/reducer";
+import modulesReducer from "./courses/[cid]/modules/reducer";
+import assignmentsReducer from "./courses/[cid]/assignments/reducer";
+import enrollmentsReducer from "./enrollments/reducer";
+import accountReducer from "./account/reducer";
 
 const store = configureStore({
     reducer: {
         coursesReducer,
         modulesReducer,
+        assignmentsReducer,
+        enrollmentsReducer,
         accountReducer,
     },
 });

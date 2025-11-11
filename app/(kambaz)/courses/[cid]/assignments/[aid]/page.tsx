@@ -1,24 +1,61 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { assignments as allAssignments } from "../../../../database";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../../../store";
+import { updateAssignment } from "../reducer";
+import type { Assignment } from "../../../../types";
 
 export default function AssignmentEditor() {
   const { cid, aid } = useParams<{ cid : string ; aid : string }>();
+  const router = useRouter();
+  const dispatch = useDispatch();
 
-  const assignment = ( Array.isArray( allAssignments ) ? allAssignments : [] ).find(
-    ( a : any ) =>
+  const all = useSelector(( state: RootState ) => ( state.assignmentsReducer )?.assignments || allAssignments );
+
+  const assignment = ( Array.isArray( all ) ? all : [] ).find(
+    ( a : Assignment ) =>
       String( a.course || "" ).toLowerCase() === String( cid ).toLowerCase() &&
       String( a._id || "" ).toLowerCase() === String( aid ).toLowerCase()
-  );
+  ) as Assignment | undefined;
 
-  const title = assignment?.title || `Assignment ${ aid }`;
+  const titleDefault = assignment?.title || `Assignment ${ aid }`;
+
+  const [ title, setTitle ] = useState<string>( titleDefault );
+  const [ description, setDescription ] = useState<string>( (assignment && (assignment.description || "")) || `Describe ${ titleDefault } here...` );
+  const [ points, setPoints ] = useState<number>( (assignment && (assignment.points || 100)) || 100 );
+  const [ group, setGroup ] = useState<string>( (assignment && (assignment as any).group) || "ASSIGNMENTS" );
+  const [ displayAs, setDisplayAs ] = useState<string>( (assignment && (assignment as any).displayAs) || "Percentage" );
+
+  useEffect(() => {
+    setTitle( assignment?.title || titleDefault );
+    setDescription( (assignment && (assignment.description || "")) || `Describe ${ titleDefault } here...` );
+    setPoints( (assignment && (assignment.points || 100)) || 100 );
+    setGroup( (assignment && (assignment as any).group) || "ASSIGNMENTS" );
+    setDisplayAs( (assignment && (assignment as any).displayAs) || "Percentage" );
+  }, [ assignment, aid, titleDefault ] );
+
+  const save = () => {
+    if (!assignment) return;
+    const updated = {
+      ...assignment,
+      title,
+      description,
+      points,
+      group,
+      displayAs,
+    } as unknown as Assignment;
+    dispatch( updateAssignment( updated ) );
+    router.push( `/courses/${ cid }/assignments` );
+  };
 
   return (
     <div id = "wd-assignments-editor" className = "p-3" style = {{ maxWidth : 800 }}>
       <div className = "mb-3">
         <label htmlFor = "wd-name" className = "form-label"> Assignment Name </label>
-        <input id = "wd-name" className = "form-control" defaultValue = { title } />
+        <input id = "wd-name" className = "form-control" value = { title } onChange = {(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)} />
       </div>
 
       <div className = "mb-3">
@@ -27,18 +64,19 @@ export default function AssignmentEditor() {
           id = "wd-description"
           className = "form-control"
           rows = { 6 }
-          defaultValue = { `Describe ${ title } here...` }
+          value = { description }
+          onChange = {(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
         />
       </div>
 
       <div className = "col-md-4 mb-3">
         <label htmlFor = "wd-points" className = "form-label"> Points </label>
-        <input id = "wd-points" type = "number" className = "form-control" defaultValue = { 100 } />
+        <input id = "wd-points" type = "number" className = "form-control" value = { points } onChange = {(e: React.ChangeEvent<HTMLInputElement>) => setPoints(Number(e.target.value))} />
       </div>
 
       <div className = "col-md-4 mb-3">
         <label htmlFor = "wd-group" className = "form-label"> Assignment Group </label>
-        <select id = "wd-group" className = "form-select" defaultValue = "ASSIGNMENTS">
+        <select id = "wd-group" className = "form-select" value = { group } onChange = {(e: React.ChangeEvent<HTMLSelectElement>) => setGroup(e.target.value)}>
           <option> ASSIGNMENTS </option>
           <option> QUIZZES </option>
           <option> EXAMS </option>
@@ -48,7 +86,7 @@ export default function AssignmentEditor() {
 
       <div className = "col-md-4 mb-3">
         <label htmlFor = "wd-display-grade-as" className = "form-label"> Display Grade As </label>
-        <select id = "wd-display-grade-as" className = "form-select" defaultValue = "Percentage">
+        <select id = "wd-display-grade-as" className = "form-select" value = { displayAs } onChange = {(e: React.ChangeEvent<HTMLSelectElement>) => setDisplayAs(e.target.value)}>
           <option> Points </option>
           <option> Percentage </option>
           <option> Letter Grade </option>
@@ -82,8 +120,8 @@ export default function AssignmentEditor() {
       </div>
 
       <div className = "d-flex justify-content-end gap-2">
-        <button className = "btn btn-secondary"> Cancel </button>
-        <button className = "btn btn-danger"> Save </button>
+        <button className = "btn btn-secondary" onClick = { () => router.back() }> Cancel </button>
+        <button className = "btn btn-danger" onClick = { save }> Save </button>
       </div>
     </div>
   );
