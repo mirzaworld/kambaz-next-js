@@ -3,15 +3,15 @@ import { Inter, Roboto_Mono } from "next/font/google";
 // import "./globals.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
-  subsets: ["latin"],
-});
+// const inter = Inter({
+//   variable: "--font-inter",
+//   subsets: ["latin"],
+// });
+//
+// const robotoMono = Roboto_Mono({
+//   variable: "--font-roboto-mono",
+//   subsets: ["latin"],
+// });
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,7 +25,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
+      <head>
+        {/* Load fonts at runtime via Google Fonts to avoid build-time fetch errors */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased" style={{ fontFamily: `Inter, Roboto Mono, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial` }}>
         {children}
       </body>
     </html>
