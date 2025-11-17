@@ -5,13 +5,13 @@ import { usePathname, useParams } from "next/navigation";
 import React from "react";
 
 
-const labels = [ "Home", "Modules", "Piazza", "Zoom", "Assignments", "Quizzes", "Grades", "People" ];
+const labels = [ "Home", "Modules", "Zoom", "Assignments", "Quizzes", "Grades", "People" ];
 
 const segmentOf = (label : string) => {
     switch (label) {
         case "Home" : return "home";
         case "Modules" : return "modules";
-        case "Piazza" : return "piazza";
+        // Piazza intentionally removed (no page implemented) to avoid 404
         case "Zoom" : return "zoom";
         case "Assignments" : return "assignments";
         case "Quizzes" : return "quizzes";
@@ -26,7 +26,7 @@ const idOf = (label : string) => {
     switch (label) {
         case "Home" : return "wd-course-home-link";
         case "Modules" : return "wd-course-modules-link";
-        case "Piazza" : return "wd-course-piazza-link";
+        // Piazza link id removed
         case "Zoom" : return "wd-course-zoom-link";
         case "Assignments" : return "wd-course-assignments-link";
         case "Quizzes" : return "wd-course-quizzes-link";

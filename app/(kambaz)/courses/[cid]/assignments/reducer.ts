@@ -11,13 +11,21 @@ const assignmentsSlice = createSlice({
   name: "assignments",
   initialState,
   reducers: {
+    // Accept a full assignment object returned from the server (with _id),
+    // or a partial payload where we generate an id locally.
     addAssignment: (state, { payload }) => {
-      const newAssignment = {
-        _id: uuidv4(),
-        title: payload.title,
-        course: payload.course,
-      };
+      const newAssignment = payload._id
+        ? payload
+        : {
+            _id: uuidv4(),
+            title: payload.title,
+            course: payload.course,
+          };
       state.assignments = [...state.assignments, newAssignment];
+    },
+    // Replace assignments array (used when loading from server)
+    setAssignments: (state, { payload }) => {
+      state.assignments = payload || [];
     },
     deleteAssignment: (state, { payload: assignmentId }: { payload: string }) => {
       state.assignments = (state.assignments as Assignment[]).filter((a) => a._id !== assignmentId);
@@ -28,5 +36,5 @@ const assignmentsSlice = createSlice({
   },
 });
 
-export const { addAssignment, deleteAssignment, updateAssignment } = assignmentsSlice.actions;
+export const { addAssignment, deleteAssignment, updateAssignment, setAssignments } = assignmentsSlice.actions;
 export default assignmentsSlice.reducer;

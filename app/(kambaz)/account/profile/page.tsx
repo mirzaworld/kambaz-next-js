@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { FormSelect, FormControl, Button } from "react-bootstrap";
 import { setCurrentUser } from "../reducer";
+import * as client from "../client";
 import type { User } from "../../types";
 
 type ProfileForm = Partial<User> & { username?: string; password?: string; email?: string; dob?: string };
@@ -15,20 +16,29 @@ export default function Profile() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const signout = () => {
+  const signout = async () => {
+    try {
+      await client.signout();
+    } catch (err) {
+      console.error(err);
+    }
     dispatch( setCurrentUser( null ) );
     router.push( "/account/signin" );
   };
 
   const [ saved, setSaved ] = useState<boolean>( false );
 
-  const save = () => {
+  const save = async () => {
     // Basic validation: require username
     if (!form.username || String(form.username).trim() === "") return;
-    // Update store
-    dispatch( setCurrentUser( form as User ) );
-    setSaved( true );
-    setTimeout( () => setSaved( false ), 1600 );
+    try {
+      const updatedProfile = await client.updateUser(form);
+      dispatch(setCurrentUser(updatedProfile));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1600);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const onInput = (e: React.ChangeEvent<HTMLInputElement>) => setForm( { ...form, [ e.target.id.replace("wd-", "") ]: e.target.value } );

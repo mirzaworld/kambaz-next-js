@@ -19,7 +19,9 @@ import { BsSearch, BsThreeDotsVertical, BsGripVertical } from "react-icons/bs";
 import { assignments as allAssignments } from "../../../database";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../store";
-import { addAssignment, deleteAssignment } from "./reducer";
+import { setAssignments, addAssignment, deleteAssignment } from "./reducer";
+import { useEffect } from "react";
+import * as client from "./client";
 import type { Assignment } from "../../../types";
 
 export default function Assignments() {
@@ -35,7 +37,10 @@ export default function Assignments() {
   const add = ( title: string ) => {
     const t = String( title || "" ).trim();
     if ( !t ) return;
-    dispatch( addAssignment( { title: t, course: cid } ) );
+    // persist to server then update store with returned assignment
+    client.createAssignmentForCourse( String( cid ), { title: t } )
+      .then((created) => dispatch(addAssignment(created)))
+      .catch((e) => console.error(e));
   };
 
   const addPrompt = () => {
@@ -45,6 +50,7 @@ export default function Assignments() {
 
   return (
     <div id = "wd-assignments" className = "pt-2">
+      <FetchAssignmentsOnMount cid={String(cid)} />
       <Row className = "align-items-center">
         <Col xs = { 12 } md = { 6 } className = "mb-2 mb-md-0">
           <InputGroup>
@@ -102,8 +108,15 @@ export default function Assignments() {
                     <span className = "fw-semibold"> 100 pts </span>
                   </div>
                 </div>
-                <FaCheckCircle className = "ms-2 text-success" />
-                <button className = "btn btn-sm btn-outline-danger ms-2" onClick = { () => dispatch( deleteAssignment( a._id ) ) }>Delete</button>
+                  <FaCheckCircle className = "ms-2 text-success" />
+                  <button
+                    className = "btn btn-sm btn-outline-danger ms-2"
+                    onClick = { () => {
+                      client.deleteAssignment(a._id)
+                        .then(() => dispatch(deleteAssignment(a._id)))
+                        .catch((e) => console.error(e));
+                    } }
+                  >Delete</button>
               </div>
             </ListGroup.Item>
           ))}
@@ -119,3 +132,31 @@ export default function Assignments() {
     </div>
   );
 }
+
+    // fetch assignments from server when the component mounts
+    function FetchAssignmentsOnMount( { cid } : { cid: string } ) {
+      const dispatch = useDispatch();
+      useEffect( () => {
+        const fetch = async () => {
+          try {
+            const assignments = await client.fetchAssignmentsForCourse( String( cid ) );
+            // debug: confirm what the server returned (temporary)
+            // eslint-disable-next-line no-console
+            console.debug("fetchAssignmentsForCourse result", { cid, length: (assignments as any)?.length, sample: (assignments as any)?.slice?.(0,3) });
+            if ( assignments && Array.isArray( assignments ) && assignments.length > 0 ) {
+              dispatch( setAssignments( assignments ) );
+              return;
+            }
+          } catch ( _e ) {
+            // fall back to local fixture below
+          }
+          // fallback: use local fixture assignments so UI shows something
+          // eslint-disable-next-line no-console
+          console.debug("fetchAssignmentsForCourse: falling back to local fixture", { cid, localCount: (allAssignments as any).length });
+          dispatch( setAssignments( allAssignments ) );
+        };
+        fetch();
+      }, [ cid, dispatch ] );
+      return null;
+    }
+

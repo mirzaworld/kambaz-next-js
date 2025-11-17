@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ListGroup, ListGroupItem, FormControl } from "react-bootstrap";
 import { BsGripVertical } from "react-icons/bs";
 
@@ -10,34 +10,60 @@ import LessonControlButtons from "./lessoncontrolbuttons";
 import ModuleControlButtons from "./modulecontrolbuttons";
 
 import { useSelector, useDispatch } from "react-redux";
-import { addModule, editModule, updateModule, deleteModule } from "./reducer";
+import { editModule, updateModule, setModules } from "./reducer";
 import { RootState } from "../../../store";
 import type { Module, Lesson } from "../../../types";
+import * as client from "./client";
 
 export default function Modules() {
   const { cid } = useParams<{ cid : string }>();
   const [ moduleName, setModuleName ] = useState( "" );
 
-  const modulesState = useSelector(( state: RootState ) => ( state.modulesReducer )?.modules || [] as Module[]);
+  const { modules } = useSelector(( state: RootState ) => ( state.modulesReducer ) || { modules: [] as Module[] });
   const dispatch = useDispatch();
 
-  const modules = ( Array.isArray( modulesState ) ? modulesState : [] as Module[] ).filter(
+  const filteredModules = ( Array.isArray( modules ) ? modules : [] as Module[] ).filter(
     ( m : Module ) => String( m.course || "" ).toLowerCase() === String( cid ).toLowerCase()
   );
+
+  const onUpdateModule = async (module: Module) => {
+    await client.updateModule(module);
+    const newModules = modules.map((m: Module) => (m._id === module._id ? module : m));
+    dispatch(setModules(newModules));
+  };
+
+  const onAddModule = async () => {
+    const created = await client.createModuleForCourse(String(cid), { name: moduleName });
+    const newModules = [...(modules || []), created];
+    dispatch(setModules(newModules));
+    setModuleName("");
+  };
+
+  const onDeleteModule = async (moduleId: string) => {
+    await client.deleteModule(moduleId);
+    const newModules = (modules || []).filter((m: Module) => m._id !== moduleId);
+    dispatch(setModules(newModules));
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      if (!cid) return;
+      const serverModules = await client.findModulesForCourse(String(cid));
+      dispatch(setModules(serverModules));
+    };
+    load();
+  }, [cid, dispatch]);
 
   return (
     <div>
       <ModulesControls
         moduleName = { moduleName }
         setModuleName = { setModuleName }
-        addModule = { () => {
-          dispatch( addModule( { name: moduleName, course: cid } ) );
-          setModuleName( "" );
-        } }
+        addModule = { onAddModule }
        /> <br /> <br /> <br /> <br />
 
       <ListGroup id = "wd-modules" className = "rounded-0">
-        { modules.map( ( module : Module ) => (
+        { filteredModules.map( ( module : Module ) => (
           <ListGroupItem
             key = { module._id }
             className = "wd-module p-0 mb-5 fs-5 border-gray"
@@ -55,17 +81,17 @@ export default function Modules() {
                     onChange = {( e : React.ChangeEvent<HTMLInputElement> ) => dispatch( updateModule( { ...module, name: e.target.value } as Module ) ) }
                     onKeyDown = {( e : React.KeyboardEvent<HTMLInputElement> ) => {
                       if ( e.key === "Enter" ) {
-                        dispatch( updateModule( { ...module, editing: false } as Module ) );
+                        onUpdateModule( { ...module, editing: false } as Module );
                       }
                     } }
-                    defaultValue = { module.name }
+                    value = { module.name }
                   />
                 ) }
               </div>
 
               <ModuleControlButtons
                 moduleId = { module._id }
-                deleteModule = {( moduleId : string ) => dispatch( deleteModule( moduleId ) ) }
+                deleteModule = {( moduleId : string ) => onDeleteModule( moduleId ) }
                 editModule = {( moduleId : string ) => dispatch( editModule( moduleId ) ) }
               />
             </div>

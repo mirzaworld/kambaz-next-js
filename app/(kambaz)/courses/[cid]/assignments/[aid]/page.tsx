@@ -6,6 +6,7 @@ import { assignments as allAssignments } from "../../../../database";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../../store";
 import { updateAssignment } from "../reducer";
+import * as client from "../client";
 import type { Assignment } from "../../../../types";
 
 export default function AssignmentEditor() {
@@ -37,7 +38,7 @@ export default function AssignmentEditor() {
     setDisplayAs( (assignment && (assignment as any).displayAs) || "Percentage" );
   }, [ assignment, aid, titleDefault ] );
 
-  const save = () => {
+  const save = async () => {
     if (!assignment) return;
     const updated = {
       ...assignment,
@@ -47,8 +48,13 @@ export default function AssignmentEditor() {
       group,
       displayAs,
     } as unknown as Assignment;
-    dispatch( updateAssignment( updated ) );
-    router.push( `/courses/${ cid }/assignments` );
+    try {
+      const serverUpdated = await client.updateAssignment(String(updated._id), updated);
+      dispatch(updateAssignment(serverUpdated));
+      router.push(`/courses/${ cid }/assignments`);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (

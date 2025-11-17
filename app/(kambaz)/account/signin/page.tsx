@@ -5,7 +5,7 @@ import { FormControl, Button } from "react-bootstrap";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
-import * as db from "../../database";
+import * as client from "../client";
 import { setCurrentUser } from "../reducer";
 import type { User } from "../../types";
 
@@ -16,13 +16,15 @@ export default function Signin() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const signin = () => {
-    const user = ( db.users || [] ).find(( u : User & { username?: string; password?: string } ) =>
-      u.username === credentials.username && u.password === credentials.password
-    );
-    if (!user) return;
-    dispatch( setCurrentUser( user ) );
-    router.push( "/dashboard" );
+  const signin = async () => {
+    try {
+      const user = await client.signin(credentials);
+      if (!user) return;
+      dispatch(setCurrentUser(user));
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error(err);
+    }
   };
 
   return (

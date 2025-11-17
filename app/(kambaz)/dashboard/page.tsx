@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import * as db from "../database";
+import * as coursesClient from "../courses/client";
+import { setCourses } from "../courses/reducer";
 
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
@@ -13,7 +14,6 @@ import { CardText, CardImg, CardTitle, CardBody } from "react-bootstrap";
 
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
-import { addNewCourse, deleteCourse, updateCourse } from "../courses/reducer";
 
 export default function Dashboard() {
 
@@ -27,7 +27,7 @@ export default function Dashboard() {
 
     const dispatch = useDispatch();
 
-    const { enrollments } = db;
+    
 
     const [course, setCourse] = useState<any>({
         _id: "0",
@@ -50,15 +50,21 @@ export default function Dashboard() {
         "/images/machinelearning.jpg",
     ];
 
-    const visibleCourses = currentUser
-        ? courses.filter((c: any) =>
-              enrollments.some(
-                  (enrollment: any) =>
-                      enrollment.user === currentUser._id &&
-                      enrollment.course === c._id
-              )
-          )
-        : courses;
+    React.useEffect(() => {
+        const fetch = async () => {
+            try {
+                const serverCourses = await coursesClient.findMyCourses();
+                if (serverCourses && Array.isArray(serverCourses)) {
+                    dispatch(setCourses(serverCourses));
+                }
+            } catch (e) {
+                // keep local fixtures as fallback if server fetch fails
+            }
+        };
+        fetch();
+    }, [currentUser]);
+
+    const visibleCourses = courses;
 
     return (
         <div id = "wd-dashboard" >
@@ -71,13 +77,27 @@ export default function Dashboard() {
                 <Button
                     className = "btn btn-primary float-end"
                     id = "wd-add-new-course-click"
-                    onClick = {() => dispatch(addNewCourse(course))}>
+                    onClick = {async () => {
+                        try {
+                            const created = await coursesClient.createCourse(course);
+                            dispatch(setCourses([ ...courses, created ]));
+                        } catch (err) {
+                            // ignore — keep local behavior if server not available
+                        }
+                    }}>
                         Add
                 </Button>
                 <Button
                     className = "btn btn-warning float-end me-2"
                     id = "wd-update-course-click"
-                    onClick = {() => dispatch(updateCourse(course))}>
+                    onClick = {async () => {
+                        try {
+                            const updated = await coursesClient.updateCourse(course._id, course);
+                            dispatch(setCourses(courses.map((c: any) => c._id === updated._id ? updated : c)));
+                        } catch (err) {
+                            dispatch(setCourses(courses.map((c: any) => c._id === course._id ? course : c)));
+                        }
+                    }}>
                         Update
                 </Button>
             </h5>
@@ -151,9 +171,14 @@ export default function Dashboard() {
                                             <Button
                                             id = "wd-delete-course-click"
                                             className = "btn btn-danger float-end"
-                                            onClick = {(event) => {
+                                            onClick = {async (event) => {
                                                 event.preventDefault();
-                                                dispatch(deleteCourse(course._id));
+                                                try {
+                                                    await coursesClient.deleteCourse(course._id);
+                                                    dispatch(setCourses(courses.filter((c: any) => c._id !== course._id)));
+                                                } catch (err) {
+                                                    dispatch(setCourses(courses.filter((c: any) => c._id !== course._id)));
+                                                }
                                             }}>
                                                 Delete
                                             </Button>
