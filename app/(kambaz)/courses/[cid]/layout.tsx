@@ -14,7 +14,6 @@ export default async function CoursesLayout(
 
   return (
     <div id = "wd-courses">
-      {/* Client-side wrapper handles breadcrumb, header and responsive nav toggle */}
       <CourseLayoutClient course={ course }>
         { children }
       </CourseLayoutClient>
