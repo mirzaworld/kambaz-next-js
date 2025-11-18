@@ -128,19 +128,16 @@ export default function Assignments() {
           )}
         </ListGroup>
       </Card>
-  {/* Assignment added alert removed (using prompt-add flow). */}
     </div>
   );
 }
 
-    // fetch assignments from server when the component mounts
     function FetchAssignmentsOnMount( { cid } : { cid: string } ) {
       const dispatch = useDispatch();
       useEffect( () => {
         const fetch = async () => {
           try {
             const assignments = await client.fetchAssignmentsForCourse( String( cid ) );
-            // debug: confirm what the server returned (temporary)
             // eslint-disable-next-line no-console
             console.debug("fetchAssignmentsForCourse result", { cid, length: (assignments as any)?.length, sample: (assignments as any)?.slice?.(0,3) });
             if ( assignments && Array.isArray( assignments ) && assignments.length > 0 ) {
@@ -148,9 +145,7 @@ export default function Assignments() {
               return;
             }
           } catch ( _e ) {
-            // fall back to local fixture below
           }
-          // fallback: use local fixture assignments so UI shows something
           // eslint-disable-next-line no-console
           console.debug("fetchAssignmentsForCourse: falling back to local fixture", { cid, localCount: (allAssignments as any).length });
           dispatch( setAssignments( allAssignments ) );

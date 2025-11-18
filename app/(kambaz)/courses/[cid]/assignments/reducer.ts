@@ -11,8 +11,6 @@ const assignmentsSlice = createSlice({
   name: "assignments",
   initialState,
   reducers: {
-    // Accept a full assignment object returned from the server (with _id),
-    // or a partial payload where we generate an id locally.
     addAssignment: (state, { payload }) => {
       const newAssignment = payload._id
         ? payload

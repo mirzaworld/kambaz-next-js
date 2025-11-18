@@ -13,14 +13,11 @@ export default function Session( { children } : { children: any } ) {
       const currentUser = await client.profile();
       dispatch( setCurrentUser( currentUser ) );
     } catch ( err ) {
-      // no current session
     }
     setPending( false );
   };
 
   useEffect( () => { fetchProfile(); }, [] );
-  // Render children once pending is false (profile fetched)
   if (!pending) return children;
-  // While pending, render a small invisible placeholder so layout still mounts
   return null;
 }
