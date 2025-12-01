@@ -20,6 +20,7 @@ export default function Dashboard() {
     const { courses } = useSelector(
         (state: RootState) => state.coursesReducer
     );
+    const [ allCourses, setAllCourses ] = useState<any[]>( [] );
 
     const { currentUser } = useSelector(
         (state: RootState) => state.accountReducer
@@ -53,18 +54,17 @@ export default function Dashboard() {
     React.useEffect(() => {
         const fetch = async () => {
             try {
-                const serverCourses = await coursesClient.findMyCourses();
-                if (serverCourses && Array.isArray(serverCourses)) {
-                    dispatch(setCourses(serverCourses));
-                }
-            } catch (e) {
-                // keep local fixtures as fallback if server fetch fails
-            }
+                const my = await coursesClient.findMyCourses();
+                if ( my && Array.isArray( my ) ) { dispatch( setCourses( my ) ); }
+                const all = await coursesClient.fetchAllCourses();
+                if ( all && Array.isArray( all ) ) { setAllCourses( all ); }
+            } catch ( e ) {}
         };
         fetch();
-    }, [currentUser]);
+    }, [ currentUser ] );
 
     const visibleCourses = courses;
+    const notEnrolled = allCourses.filter( (c:any) => !visibleCourses.some( (m:any) => m._id === c._id ) );
 
     return (
         <div id = "wd-dashboard" >
@@ -123,7 +123,7 @@ export default function Dashboard() {
             <hr />
 
             <h2 id = "wd-dashboard-published" >
-                Published Courses ( { visibleCourses.length } )
+                My Courses ( { visibleCourses.length } )
             </h2>
             <hr />
 
@@ -156,9 +156,16 @@ export default function Dashboard() {
                                             style = {{ height: "100px" }}>
                                                 { course.description }
                                             </CardText>
-                                            <Button variant = "primary" >
-                                                Go
-                                            </Button>
+                                                                                        <Button variant = "primary" >
+                                                                                                Go
+                                                                                        </Button>
+                                                                                        { currentUser && (
+                                                                                            <Button
+                                                                                                className = "btn btn-outline-secondary ms-2"
+                                                                                                onClick = { async (e) => { e.preventDefault(); await coursesClient.unenrollFromCourse( currentUser._id, course._id ); const my = await coursesClient.findMyCourses(); dispatch( setCourses( my ) ); } }>
+                                                                                                Unenroll
+                                                                                            </Button>
+                                                                                        ) }
                                             <Button
                                             id = "wd-edit-course-click"
                                             className = "btn btn-warning me-2 float-end"
@@ -189,7 +196,37 @@ export default function Dashboard() {
                         );
                     })}
                 </Row>
-            </div>
+                        </div>
+                        <hr />
+                        <h2> All Courses ( { notEnrolled.length } ) </h2>
+                        <hr />
+                        <div>
+                            <Row xs = {1} md = {5} className = "g-4">
+                                { notEnrolled.map( (course:any, idx:number) => {
+                                    const img = images[ idx % images.length ];
+                                    return (
+                                        <Col key = {course._id} style = {{ width:"300px" }}>
+                                            <Card>
+                                                <Link href = {`/courses/${course._id}/home`} className = "text-decoration-none text-dark">
+                                                    <CardImg src = { course.image || img } variant = "top" width = "100%" height = {160} />
+                                                    <CardBody>
+                                                        <CardTitle className = "text-nowrap overflow-hidden"> { course.name } </CardTitle>
+                                                        <CardText style = {{ height:"100px" }}> { course.description } </CardText>
+                                                        { currentUser && (
+                                                            <Button
+                                                                className = "btn btn-outline-primary"
+                                                                onClick = { async (e) => { e.preventDefault(); await coursesClient.enrollIntoCourse( currentUser._id, course._id ); const my = await coursesClient.findMyCourses(); dispatch( setCourses( my ) ); } }>
+                                                                Enroll
+                                                            </Button>
+                                                        ) }
+                                                    </CardBody>
+                                                </Link>
+                                            </Card>
+                                        </Col>
+                                    );
+                                } ) }
+                            </Row>
+                        </div>
         </div>
     );
 }

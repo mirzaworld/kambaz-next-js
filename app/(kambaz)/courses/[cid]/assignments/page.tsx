@@ -16,7 +16,6 @@ import { IoMdArrowDropdown } from "react-icons/io";
 import { HiOutlinePencilAlt } from "react-icons/hi";
 import { BsSearch, BsThreeDotsVertical, BsGripVertical } from "react-icons/bs";
 
-import { assignments as allAssignments } from "../../../database";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../../../store";
 import { setAssignments, addAssignment, deleteAssignment } from "./reducer";
@@ -27,7 +26,7 @@ import type { Assignment } from "../../../types";
 export default function Assignments() {
   const { cid } = useParams<{ cid : string }>();
 
-  const all = useSelector(( state: RootState ) => ( state.assignmentsReducer )?.assignments || allAssignments );
+  const all = useSelector( ( state: RootState ) => ( state.assignmentsReducer )?.assignments || [] );
   const dispatch = useDispatch();
 
   const items = ( Array.isArray( all ) ? all : [] ).filter(
@@ -39,8 +38,7 @@ export default function Assignments() {
     if ( !t ) return;
     // persist to server then update store with returned assignment
     client.createAssignmentForCourse( String( cid ), { title: t } )
-      .then((created) => dispatch(addAssignment(created)))
-      .catch((e) => console.error(e));
+      .then( ( created ) => dispatch( addAssignment( created ) ) );
   };
 
   const addPrompt = () => {
@@ -112,9 +110,8 @@ export default function Assignments() {
                   <button
                     className = "btn btn-sm btn-outline-danger ms-2"
                     onClick = { () => {
-                      client.deleteAssignment(a._id)
-                        .then(() => dispatch(deleteAssignment(a._id)))
-                        .catch((e) => console.error(e));
+                      client.deleteAssignment( a._id )
+                        .then( () => dispatch( deleteAssignment( a._id ) ) );
                     } }
                   >Delete</button>
               </div>
@@ -138,17 +135,8 @@ export default function Assignments() {
         const fetch = async () => {
           try {
             const assignments = await client.fetchAssignmentsForCourse( String( cid ) );
-            // eslint-disable-next-line no-console
-            console.debug("fetchAssignmentsForCourse result", { cid, length: (assignments as any)?.length, sample: (assignments as any)?.slice?.(0,3) });
-            if ( assignments && Array.isArray( assignments ) && assignments.length > 0 ) {
-              dispatch( setAssignments( assignments ) );
-              return;
-            }
-          } catch ( _e ) {
-          }
-          // eslint-disable-next-line no-console
-          console.debug("fetchAssignmentsForCourse: falling back to local fixture", { cid, localCount: (allAssignments as any).length });
-          dispatch( setAssignments( allAssignments ) );
+            dispatch( setAssignments( assignments ) );
+          } catch ( _e ) {}
         };
         fetch();
       }, [ cid, dispatch ] );

@@ -29,9 +29,9 @@ export type Assignment = {
   course: string;
   description?: string;
   points?: number;
-  dueDate?: string;
-  availableFrom?: string;
-  availableUntil?: string;
+  dueDate?: string; // ISO date string
+  availableDate?: string; // corresponds to server availableDate
+  availableUntilDate?: string; // corresponds to server availableUntilDate
 };
 
 export type User = {

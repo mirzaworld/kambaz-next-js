@@ -8,6 +8,11 @@ export const fetchAssignmentsForCourse = async (courseId: string) => {
   return response.data;
 };
 
+export const fetchAssignmentById = async (assignmentId: string) => {
+  const response = await axiosWithCredentials.get(`${HTTP_SERVER}/api/assignments/${assignmentId}`);
+  return response.data;
+};
+
 export const createAssignmentForCourse = async (courseId: string, assignment: any) => {
   const response = await axiosWithCredentials.post(`${HTTP_SERVER}/api/courses/${courseId}/assignments`, assignment);
   return response.data;
@@ -25,6 +30,7 @@ export const deleteAssignment = async (assignmentId: string) => {
 
 export default {
   fetchAssignmentsForCourse,
+  fetchAssignmentById,
   createAssignmentForCourse,
   updateAssignment,
   deleteAssignment,

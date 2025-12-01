@@ -22,27 +22,25 @@ export default function Modules() {
   const { modules } = useSelector(( state: RootState ) => ( state.modulesReducer ) || { modules: [] as Module[] });
   const dispatch = useDispatch();
 
-  const filteredModules = ( Array.isArray( modules ) ? modules : [] as Module[] ).filter(
-    ( m : Module ) => String( m.course || "" ).toLowerCase() === String( cid ).toLowerCase()
-  );
+  const filteredModules = Array.isArray( modules ) ? modules : [] as Module[];
 
-  const onUpdateModule = async (module: Module) => {
-    await client.updateModule(module);
-    const newModules = modules.map((m: Module) => (m._id === module._id ? module : m));
-    dispatch(setModules(newModules));
+  const onUpdateModule = async ( module: any ) => {
+    await client.updateModule( cid, module );
+    const newModules = modules.map( ( m: any ) =>
+      m._id === module._id ? module : m
+    );
+    dispatch( setModules( newModules ) );
   };
-
   const onAddModule = async () => {
-    const created = await client.createModuleForCourse(String(cid), { name: moduleName });
-    const newModules = [...(modules || []), created];
-    dispatch(setModules(newModules));
-    setModuleName("");
+    const created = await client.createModuleForCourse( String( cid ), { name: moduleName } );
+    const newModules = [ ...( modules || [] ), created ];
+    dispatch( setModules( newModules ) );
+    setModuleName( "" );
   };
-
-  const onDeleteModule = async (moduleId: string) => {
-    await client.deleteModule(moduleId);
-    const newModules = (modules || []).filter((m: Module) => m._id !== moduleId);
-    dispatch(setModules(newModules));
+  const onDeleteModule = async ( moduleId: string ) => {
+    await client.deleteModule( cid, moduleId );
+    const newModules = ( modules || [] ).filter( ( m: Module ) => m._id !== moduleId );
+    dispatch( setModules( newModules ) );
   };
 
   useEffect(() => {
