@@ -2,13 +2,19 @@
  * NEW POST SCREEN
  * Modal for creating new posts (Questions or Notes)
  * Collects: type, visibility, folders, summary, details
+ * Uses React Quill for rich text editing
  */
 
 "use client";
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+import "quill/dist/quill.snow.css";
 import "./components.css";
+
+// Dynamic import for react-quill (SSR compatibility)
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface Folder {
   _id: string;
@@ -196,12 +202,18 @@ export default function NewPostScreen({
           {/* Details */}
           <div className="pazza-form-section">
             <label>Details</label>
-            <textarea
-              className="pazza-editor-textarea"
-              placeholder="Enter post details..."
+            <ReactQuill
               value={details}
-              onChange={(e) => setDetails(e.target.value)}
-              rows={8}
+              onChange={setDetails}
+              theme="snow"
+              placeholder="Enter post details..."
+              modules={{
+                toolbar: [
+                  ["bold", "italic", "underline"],
+                  ["link"],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                ],
+              }}
             />
           </div>
 

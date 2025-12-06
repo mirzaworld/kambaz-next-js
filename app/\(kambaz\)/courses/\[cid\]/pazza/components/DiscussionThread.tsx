@@ -7,7 +7,12 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import "quill/dist/quill.snow.css";
 import "./components.css";
+
+// Dynamic import for react-quill (SSR compatibility)
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface Discussion {
   _id: string;
@@ -87,12 +92,18 @@ export default function DiscussionThread({
     <div className="pazza-discussion-thread">
       {/* Post New Discussion Form */}
       <form className="pazza-new-discussion-form" onSubmit={handlePostDiscussion}>
-        <textarea
-          className="pazza-editor-textarea"
-          placeholder="Start a new follow-up discussion..."
+        <ReactQuill
           value={newDiscussionContent}
-          onChange={(e) => setNewDiscussionContent(e.target.value)}
-          rows={3}
+          onChange={setNewDiscussionContent}
+          theme="snow"
+          placeholder="Start a new follow-up discussion..."
+          modules={{
+            toolbar: [
+              ["bold", "italic", "underline"],
+              ["link"],
+              [{ list: "ordered" }, { list: "bullet" }],
+            ],
+          }}
         />
         <div className="pazza-editor-actions">
           <button

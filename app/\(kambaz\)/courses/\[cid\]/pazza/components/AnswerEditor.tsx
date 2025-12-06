@@ -8,7 +8,12 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import dynamic from "next/dynamic";
+import "quill/dist/quill.snow.css";
 import "./components.css";
+
+// Dynamic import for react-quill (SSR compatibility)
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface AnswerEditorProps {
   courseId: string;
@@ -75,12 +80,18 @@ export default function AnswerEditor({
 
   return (
     <form className="pazza-answer-editor" onSubmit={handleSubmit}>
-      <textarea
-        className="pazza-editor-textarea"
-        placeholder="Type your answer here..."
+      <ReactQuill
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={6}
+        onChange={setContent}
+        theme="snow"
+        placeholder="Type your answer here..."
+        modules={{
+          toolbar: [
+            ["bold", "italic", "underline"],
+            ["link"],
+            [{ list: "ordered" }, { list: "bullet" }],
+          ],
+        }}
       />
       <div className="pazza-editor-actions">
         <button
