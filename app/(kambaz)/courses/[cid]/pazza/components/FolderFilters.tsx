@@ -1,10 +1,3 @@
-/**
- * FOLDER FILTERS
- * Displays folder buttons that allow filtering posts by category
- * Only one folder can be selected at a time
- * Selected folder appears highlighted
- */
-
 "use client";
 
 import "./components.css";
@@ -20,11 +13,7 @@ interface FolderFiltersProps {
   onFolderChange: (folderName: string) => void;
 }
 
-export default function FolderFilters({
-  folders,
-  selectedFolder,
-  onFolderChange,
-}: FolderFiltersProps) {
+export default function FolderFilters({ folders, selectedFolder, onFolderChange }: FolderFiltersProps) {
   return (
     <div className="pazza-folder-filters">
       {folders.map((folder) => (

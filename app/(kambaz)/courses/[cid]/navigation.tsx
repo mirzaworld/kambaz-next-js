@@ -5,17 +5,17 @@ import { usePathname, useParams } from "next/navigation";
 import React from "react";
 
 
-const labels = [ "Home", "Modules", "Zoom", "Assignments", "Quizzes", "Grades", "People" ];
+const labels = [ "Home", "Modules", "Zoom", "Assignments", "Quizzes", "Grades", "Pazza", "People" ];
 
 const segmentOf = (label : string) => {
     switch (label) {
         case "Home" : return "home";
         case "Modules" : return "modules";
-        // Piazza intentionally removed (no page implemented) to avoid 404
         case "Zoom" : return "zoom";
         case "Assignments" : return "assignments";
         case "Quizzes" : return "quizzes";
         case "Grades" : return "grades";
+        case "Pazza" : return "pazza";
         case "People" : return "people/table"; // preserve your current route
         default : return label.toLowerCase();
     }
@@ -26,11 +26,11 @@ const idOf = (label : string) => {
     switch (label) {
         case "Home" : return "wd-course-home-link";
         case "Modules" : return "wd-course-modules-link";
-        // Piazza link id removed
         case "Zoom" : return "wd-course-zoom-link";
         case "Assignments" : return "wd-course-assignments-link";
         case "Quizzes" : return "wd-course-quizzes-link";
         case "Grades" : return "wd-course-grades-link";
+        case "Pazza" : return "wd-course-pazza-link";
         case "People" : return "wd-course-people-link";
         default : return `wd-course-${ label.toLowerCase() }-link`;
     }

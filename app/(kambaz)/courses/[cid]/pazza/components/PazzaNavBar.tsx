@@ -1,18 +1,9 @@
-/**
- * PAZZA NAVIGATION BAR
- * Fixed top bar showing:
- * - Pazza logo/title
- * - Course name
- * - Q&A and Manage Class tabs
- * - Current user name
- */
-
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import NewPostScreen from "./NewPostScreen";
-import ManageClassScreen from "./ManageClassScreen";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import NewPostModal from "./NewPostModal";
+import ManageClassModal from "./ManageClassModal";
 import "./components.css";
 
 interface Folder {
@@ -23,23 +14,21 @@ interface Folder {
 interface PazzaNavBarProps {
   courseId: string;
   onPostCreated: () => void;
+  onFoldersUpdated: () => void;
   folders: Folder[];
 }
 
-export default function PazzaNavBar({ courseId, onPostCreated, folders }: PazzaNavBarProps) {
-  const { data: session } = useSession();
+export default function PazzaNavBar({ courseId, onPostCreated, onFoldersUpdated, folders }: PazzaNavBarProps) {
+  const currentUser = useSelector((state: any) => state.accountReducer?.currentUser);
   const [currentCourse, setCurrentCourse] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"qa" | "manage">("qa");
-  const [showNewPostScreen, setShowNewPostScreen] = useState(false);
-  const [showManageClassScreen, setShowManageClassScreen] = useState(false);
+  const [showNewPostModal, setShowNewPostModal] = useState(false);
+  const [showManageClassModal, setShowManageClassModal] = useState(false);
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
-  const currentUser = session?.user as any;
-  const isInstructor = currentUser?.role === "INSTRUCTOR";
+  // Check if user has instructor privileges (faculty, admin, or ta)
+  const isInstructor = ["FACULTY", "ADMIN", "TA"].includes(currentUser?.role?.toUpperCase() || "");
 
-  /**
-   * Fetch course details to display name
-   */
   useEffect(() => {
     if (courseId) {
       fetchCourseDetails();
@@ -59,46 +48,31 @@ export default function PazzaNavBar({ courseId, onPostCreated, folders }: PazzaN
     }
   };
 
-  /**
-   * Handle New Post button click
-   */
   const handleNewPostClick = () => {
-    setShowNewPostScreen(true);
+    setShowNewPostModal(true);
   };
 
-  /**
-   * Handle New Post submission
-   */
   const handlePostSubmitted = () => {
-    setShowNewPostScreen(false);
+    setShowNewPostModal(false);
     onPostCreated();
   };
 
-  /**
-   * Handle Manage Class click (instructor only)
-   */
   const handleManageClassClick = () => {
     setActiveTab("manage");
-    setShowManageClassScreen(true);
+    setShowManageClassModal(true);
   };
 
-  /**
-   * Handle close Manage Class
-   */
   const handleCloseManageClass = () => {
-    setShowManageClassScreen(false);
+    setShowManageClassModal(false);
     setActiveTab("qa");
   };
 
   return (
     <>
-      {/* Navigation Bar */}
       <div className="pazza-navbar">
         <div className="pazza-navbar-left">
           <div className="pazza-logo">📝 Pazza</div>
-          <div className="pazza-course-name">
-            Course: {currentCourse?.name || "Loading..."}
-          </div>
+          <div className="pazza-course-name">Course: {currentCourse?.name || "Loading..."}</div>
         </div>
 
         <div className="pazza-navbar-tabs">
@@ -106,7 +80,7 @@ export default function PazzaNavBar({ courseId, onPostCreated, folders }: PazzaN
             className={`pazza-tab ${activeTab === "qa" ? "active" : ""}`}
             onClick={() => {
               setActiveTab("qa");
-              setShowManageClassScreen(false);
+              setShowManageClassModal(false);
             }}
           >
             Q&A
@@ -130,8 +104,7 @@ export default function PazzaNavBar({ courseId, onPostCreated, folders }: PazzaN
         </div>
       </div>
 
-      {/* New Post Button (visible in Q&A tab) */}
-      {activeTab === "qa" && !showManageClassScreen && (
+      {activeTab === "qa" && !showManageClassModal && (
         <div className="pazza-action-bar">
           <button className="pazza-btn-new-post" onClick={handleNewPostClick}>
             ➕ New Post
@@ -139,23 +112,24 @@ export default function PazzaNavBar({ courseId, onPostCreated, folders }: PazzaN
         </div>
       )}
 
-      {/* Modals */}
-      {showNewPostScreen && (
-        <NewPostScreen
+      {showNewPostModal && (
+        <NewPostModal
           courseId={courseId}
           folders={folders}
           onSubmit={handlePostSubmitted}
-          onCancel={() => setShowNewPostScreen(false)}
+          onCancel={() => setShowNewPostModal(false)}
         />
       )}
 
-      {showManageClassScreen && isInstructor && (
-        <ManageClassScreen
+      {showManageClassModal && isInstructor && (
+        <ManageClassModal
           courseId={courseId}
           folders={folders}
+          currentUser={currentUser}
           onClose={handleCloseManageClass}
           onFoldersUpdated={() => {
-            // Refetch folders in parent component
+            onFoldersUpdated();
+            setActiveTab("qa");
           }}
         />
       )}

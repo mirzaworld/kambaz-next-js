@@ -1,12 +1,3 @@
-/**
- * LIST OF POSTS SIDEBAR
- * Left sidebar showing:
- * - Toggle button to collapse/expand sidebar
- * - Search field
- * - Posts grouped by date (TODAY, YESTERDAY, LAST WEEK, etc.)
- * - Click post to select and view details
- */
-
 "use client";
 
 import { useMemo } from "react";
@@ -33,10 +24,6 @@ interface ListOfPostsSidebarProps {
   isLoading: boolean;
 }
 
-/**
- * Group posts by date ranges
- * Returns: { TODAY: [], YESTERDAY: [], LAST_WEEK: [], ...WEEKS }
- */
 function groupPostsByDate(posts: Post[]) {
   const groups: { [key: string]: Post[] } = {
     TODAY: [],
@@ -62,10 +49,9 @@ function groupPostsByDate(posts: Post[]) {
     } else if (postDay > weekAgoStart) {
       groups.LAST_WEEK.push(post);
     } else {
-      // Group by week
       const weekStart = new Date(postDate);
       const day = weekStart.getDay();
-      const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+      const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1);
       weekStart.setDate(diff);
 
       const monthStart = (weekStart.getMonth() + 1).toString().padStart(2, "0");
@@ -99,17 +85,11 @@ export default function ListOfPostsSidebar({
 }: ListOfPostsSidebarProps) {
   const groupedPosts = useMemo(() => groupPostsByDate(posts), [posts]);
 
-  /**
-   * Get preview text (first 60 characters of post details)
-   */
   const getPreview = (details: string) => {
-    const cleanText = details.replace(/<[^>]*>/g, ""); // Remove HTML tags
+    const cleanText = details.replace(/<[^>]*>/g, "");
     return cleanText.length > 60 ? cleanText.substring(0, 60) + "..." : cleanText;
   };
 
-  /**
-   * Format time as HH:MM AM/PM
-   */
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
@@ -119,12 +99,7 @@ export default function ListOfPostsSidebar({
     });
   };
 
-  /**
-   * Get post type icon
-   */
-  const getTypeIcon = (type: string) => {
-    return type === "QUESTION" ? "❓" : "📌";
-  };
+  const getTypeIcon = (type: string) => (type === "QUESTION" ? "❓" : "📌");
 
   if (isCollapsed) {
     return (
@@ -138,14 +113,12 @@ export default function ListOfPostsSidebar({
 
   return (
     <div className="pazza-sidebar-content">
-      {/* Toggle Button */}
       <div className="pazza-sidebar-header">
         <button className="pazza-sidebar-toggle" onClick={onToggleCollapse} title="Collapse">
           ◀
         </button>
       </div>
 
-      {/* Search Field */}
       <div className="pazza-search-container">
         <input
           type="text"
@@ -156,7 +129,6 @@ export default function ListOfPostsSidebar({
         />
       </div>
 
-      {/* Posts List */}
       <div className="pazza-posts-list">
         {isLoading ? (
           <div className="pazza-loading">Loading posts...</div>
@@ -164,7 +136,6 @@ export default function ListOfPostsSidebar({
           <div className="pazza-empty">No posts yet</div>
         ) : (
           <>
-            {/* TODAY */}
             {groupedPosts.TODAY && groupedPosts.TODAY.length > 0 && (
               <div className="pazza-date-group">
                 <div className="pazza-date-label">TODAY</div>
@@ -187,7 +158,6 @@ export default function ListOfPostsSidebar({
               </div>
             )}
 
-            {/* YESTERDAY */}
             {groupedPosts.YESTERDAY && groupedPosts.YESTERDAY.length > 0 && (
               <div className="pazza-date-group">
                 <div className="pazza-date-label">YESTERDAY</div>
@@ -210,7 +180,6 @@ export default function ListOfPostsSidebar({
               </div>
             )}
 
-            {/* LAST WEEK */}
             {groupedPosts.LAST_WEEK && groupedPosts.LAST_WEEK.length > 0 && (
               <div className="pazza-date-group">
                 <div className="pazza-date-label">LAST WEEK</div>
@@ -233,10 +202,9 @@ export default function ListOfPostsSidebar({
               </div>
             )}
 
-            {/* OLDER WEEKS */}
             {Object.entries(groupedPosts).map(([weekKey, weekPosts]) => {
               if (["TODAY", "YESTERDAY", "LAST_WEEK"].includes(weekKey)) {
-                return null; // Skip already rendered groups
+                return null;
               }
               return (
                 <div key={weekKey} className="pazza-date-group">

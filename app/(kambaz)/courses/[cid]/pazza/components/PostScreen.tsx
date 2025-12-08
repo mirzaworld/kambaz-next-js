@@ -1,21 +1,9 @@
-/**
- * POST SCREEN
- * Right column showing:
- * - Post details (title, author, content)
- * - Answers (student and instructor)
- * - Follow-up discussions
- * - Option to post answers or discussions (based on user role)
- * OR
- * - Class at a Glance statistics (when no post selected)
- */
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import ClassAtAGlanceScreen from "./ClassAtAGlanceScreen";
+import { useSelector } from "react-redux";
 import AnswerEditor from "./AnswerEditor";
-import DiscussionThread from "./DiscussionThread";
+import EditPostScreen from "./EditPostScreen";
 import "./components.css";
 
 interface Post {
@@ -53,6 +41,7 @@ interface Discussion {
   parentDiscussionId: string | null;
   resolved: boolean;
   createdAt: string;
+  replies?: Discussion[];
 }
 
 interface PostScreenProps {
@@ -70,33 +59,46 @@ export default function PostScreen({
   onPostDeleted,
   onPostUpdated,
 }: PostScreenProps) {
-  const { data: session } = useSession();
+  const currentUser = useSelector((state: any) => state.account?.currentUser);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [discussions, setDiscussions] = useState<Discussion[]>([]);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
+  const [editingAnswerContent, setEditingAnswerContent] = useState("");
+  const [showEditScreen, setShowEditScreen] = useState(false);
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
-  const currentUser = session?.user as any;
+  const currentUserName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim() || "User";
 
-  /**
-   * When selected post changes, load answers and discussions
-   */
   useEffect(() => {
     if (selectedPost) {
       loadPostContent();
     }
   }, [selectedPost?._id]);
 
-  /**
-   * Load answers and discussions for selected post
-   */
+  const fetchRepliesRecursive = async (discussionId: string): Promise<Discussion[]> => {
+    const replyRes = await fetch(
+      `${SERVER_URL}/api/courses/${courseId}/pazza/discussions/${discussionId}/replies`,
+      { credentials: "include" }
+    );
+    if (!replyRes.ok) return [];
+    const replies = await replyRes.json();
+
+    const withNested = await Promise.all(
+      (replies || []).map(async (reply: Discussion) => ({
+        ...reply,
+        replies: await fetchRepliesRecursive(reply._id),
+      }))
+    );
+    return withNested;
+  };
+
   const loadPostContent = async () => {
     if (!selectedPost) return;
 
     try {
       setIsLoadingContent(true);
 
-      // Load answers
       const answersResponse = await fetch(
         `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${selectedPost._id}/answers`,
         { credentials: "include" }
@@ -104,13 +106,19 @@ export default function PostScreen({
       const answersData = await answersResponse.json();
       setAnswers(answersData || []);
 
-      // Load discussions
       const discussionsResponse = await fetch(
         `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${selectedPost._id}/discussions`,
         { credentials: "include" }
       );
       const discussionsData = await discussionsResponse.json();
-      setDiscussions(discussionsData || []);
+
+      const discussionsWithReplies = await Promise.all(
+        (discussionsData || []).map(async (discussion: Discussion) => ({
+          ...discussion,
+          replies: await fetchRepliesRecursive(discussion._id),
+        }))
+      );
+      setDiscussions(discussionsWithReplies || []);
     } catch (error) {
       console.error("Error loading post content:", error);
     } finally {
@@ -118,24 +126,54 @@ export default function PostScreen({
     }
   };
 
-  /**
-   * Handle answer posted
-   */
   const handleAnswerPosted = () => {
     loadPostContent();
     onPostUpdated();
   };
 
-  /**
-   * Handle discussion posted
-   */
+  const handleAnswerSaved = async () => {
+    setEditingAnswerId(null);
+    setEditingAnswerContent("");
+    await loadPostContent();
+    onPostUpdated();
+  };
+
   const handleDiscussionPosted = () => {
     loadPostContent();
   };
+  const handleDeleteAnswer = async (answer: Answer) => {
+    if (!confirm("Are you sure you want to delete this answer?")) return;
 
-  /**
-   * Delete post
-   */
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/courses/${courseId}/pazza/answers/${answer._id}`,
+        { method: "DELETE", credentials: "include" }
+      );
+      if (response.ok) {
+        setEditingAnswerId(null);
+        setEditingAnswerContent("");
+        await loadPostContent();
+        onPostUpdated();
+      }
+    } catch (error) {
+      console.error("Error deleting answer:", error);
+    }
+  };
+
+  const handleStartEditAnswer = (answer: Answer) => {
+    setEditingAnswerId(answer._id);
+    setEditingAnswerContent(answer.content);
+  };
+
+  const handleDiscussionUpdated = () => {
+    loadPostContent();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAnswerId(null);
+    setEditingAnswerContent("");
+  };
+
   const handleDeletePost = async () => {
     if (!selectedPost || !confirm("Are you sure you want to delete this post?")) return;
 
@@ -156,9 +194,19 @@ export default function PostScreen({
     }
   };
 
-  // Show Class at a Glance if no post selected
+  const handlePostEdited = async () => {
+    setShowEditScreen(false);
+    await loadPostContent();
+    onPostUpdated();
+  };
+
   if (!selectedPost) {
-    return <ClassAtAGlanceScreen posts={allPosts} />;
+    return (
+      <div className="pazza-empty-state">
+        <h3>Select a post to view details</h3>
+        <p>Choose a post from the list to see its content</p>
+      </div>
+    );
   }
 
   const studentAnswer = answers.find((a) => a.authorRole === "STUDENT");
@@ -167,7 +215,6 @@ export default function PostScreen({
 
   return (
     <div className="pazza-post-screen">
-      {/* Post Header */}
       <div className="pazza-post-header">
         <h2 className="pazza-post-title">{selectedPost.summary}</h2>
         <div className="pazza-post-metadata">
@@ -177,10 +224,11 @@ export default function PostScreen({
           </span>
           <span className="pazza-viewcount">{selectedPost.viewCount} views</span>
 
-          {/* Edit/Delete buttons (only for author or instructors) */}
           {(currentUser?._id === selectedPost.authorId || currentUser?.role === "INSTRUCTOR") && (
             <div className="pazza-post-actions">
-              <button className="pazza-btn-small">✏️ Edit</button>
+              <button className="pazza-btn-small" onClick={() => setShowEditScreen(true)}>
+                ✏️ Edit
+              </button>
               <button className="pazza-btn-small pazza-btn-danger" onClick={handleDeletePost}>
                 🗑️ Delete
               </button>
@@ -189,7 +237,6 @@ export default function PostScreen({
         </div>
       </div>
 
-      {/* Post Content */}
       <div className="pazza-post-body">
         <div
           className="pazza-post-details"
@@ -197,10 +244,8 @@ export default function PostScreen({
         />
       </div>
 
-      {/* Divider */}
       <div className="pazza-divider"></div>
 
-      {/* Student's Answers */}
       {studentAnswer && (
         <div className="pazza-answer-section">
           <h4 className="pazza-section-title">STUDENT'S ANSWERS</h4>
@@ -214,20 +259,43 @@ export default function PostScreen({
               </span>
               {(currentUser?._id === studentAnswer.authorId || currentUser?.role === "INSTRUCTOR") && (
                 <div className="pazza-answer-actions">
-                  <button className="pazza-btn-small">✏️ Edit</button>
-                  <button className="pazza-btn-small pazza-btn-danger">🗑️ Delete</button>
+                  <button
+                    className="pazza-btn-small"
+                    onClick={() => handleStartEditAnswer(studentAnswer)}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    className="pazza-btn-small pazza-btn-danger"
+                    onClick={() => handleDeleteAnswer(studentAnswer)}
+                  >
+                    🗑️ Delete
+                  </button>
                 </div>
               )}
             </div>
-            <div
-              className="pazza-answer-content"
-              dangerouslySetInnerHTML={{ __html: studentAnswer.content }}
-            />
+            {editingAnswerId === studentAnswer._id ? (
+              <AnswerEditor
+                courseId={courseId}
+                postId={selectedPost._id}
+                authorRole="STUDENT"
+                answerId={studentAnswer._id}
+                initialContent={editingAnswerContent}
+                mode="edit"
+                onSubmit={handleAnswerSaved}
+                onCancel={handleCancelEdit}
+                submitLabel="Save Student Answer"
+              />
+            ) : (
+              <div
+                className="pazza-answer-content"
+                dangerouslySetInnerHTML={{ __html: studentAnswer.content }}
+              />
+            )}
           </div>
         </div>
       )}
 
-      {/* Post Answer Editor (if question and no answers) */}
       {selectedPost.type === "QUESTION" && !studentAnswer && currentUser?.role === "STUDENT" && (
         <div className="pazza-post-answer-form">
           <h4>POST AN ANSWER</h4>
@@ -240,7 +308,6 @@ export default function PostScreen({
         </div>
       )}
 
-      {/* Instructor's Answer */}
       {instructorAnswer && (
         <div className="pazza-answer-section">
           <h4 className="pazza-section-title">INSTRUCTOR'S ANSWERS</h4>
@@ -254,20 +321,43 @@ export default function PostScreen({
               </span>
               {(currentUser?._id === instructorAnswer.authorId || currentUser?.role === "INSTRUCTOR") && (
                 <div className="pazza-answer-actions">
-                  <button className="pazza-btn-small">✏️ Edit</button>
-                  <button className="pazza-btn-small pazza-btn-danger">🗑️ Delete</button>
+                  <button
+                    className="pazza-btn-small"
+                    onClick={() => handleStartEditAnswer(instructorAnswer)}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    className="pazza-btn-small pazza-btn-danger"
+                    onClick={() => handleDeleteAnswer(instructorAnswer)}
+                  >
+                    🗑️ Delete
+                  </button>
                 </div>
               )}
             </div>
-            <div
-              className="pazza-answer-content"
-              dangerouslySetInnerHTML={{ __html: instructorAnswer.content }}
-            />
+            {editingAnswerId === instructorAnswer._id ? (
+              <AnswerEditor
+                courseId={courseId}
+                postId={selectedPost._id}
+                authorRole="INSTRUCTOR"
+                answerId={instructorAnswer._id}
+                initialContent={editingAnswerContent}
+                mode="edit"
+                onSubmit={handleAnswerSaved}
+                onCancel={handleCancelEdit}
+                submitLabel="Save Instructor Answer"
+              />
+            ) : (
+              <div
+                className="pazza-answer-content"
+                dangerouslySetInnerHTML={{ __html: instructorAnswer.content }}
+              />
+            )}
           </div>
         </div>
       )}
 
-      {/* Post Instructor Answer Editor (if question and instructor) */}
       {selectedPost.type === "QUESTION" && !instructorAnswer && currentUser?.role === "INSTRUCTOR" && (
         <div className="pazza-post-answer-form">
           <h4>POST AN ANSWER</h4>
@@ -282,21 +372,35 @@ export default function PostScreen({
 
       <div className="pazza-divider"></div>
 
-      {/* Follow Up Discussions */}
       {selectedPost.type === "QUESTION" && (
         <div className="pazza-discussions-section">
           <h4 className="pazza-section-title">FOLLOW UP DISCUSSIONS</h4>
-
-          {/* New Discussion Form */}
-          <DiscussionThread
-            courseId={courseId}
-            postId={selectedPost._id}
-            discussions={topLevelDiscussions}
-            currentUserId={currentUser?._id}
-            currentUserRole={currentUser?.role}
-            onDiscussionPosted={handleDiscussionPosted}
-          />
+          <div className="pazza-discussions-list">
+            {topLevelDiscussions.length === 0 ? (
+              <p className="pazza-no-discussions">No discussions yet</p>
+            ) : (
+              topLevelDiscussions.map((discussion) => (
+                <div key={discussion._id} className="pazza-discussion-item">
+                  <div className="pazza-discussion-author">
+                    {discussion.authorName} ({discussion.authorRole})
+                  </div>
+                  <div className="pazza-discussion-content">{discussion.content}</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
+      )}
+
+      {showEditScreen && (
+        <EditPostScreen
+          courseId={courseId}
+          postToEdit={selectedPost}
+          currentUserId={currentUser?._id || ""}
+          currentUserRole={currentUser?.role || ""}
+          onClose={() => setShowEditScreen(false)}
+          onPostEdited={handlePostEdited}
+        />
       )}
     </div>
   );

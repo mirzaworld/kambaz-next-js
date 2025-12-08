@@ -1,12 +1,3 @@
-/**
- * MANAGE CLASS SCREEN
- * Instructor-only interface for managing course folders
- * - View all folders
- * - Add new folder
- * - Rename folder
- * - Delete folder(s)
- */
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -20,6 +11,7 @@ interface Folder {
 interface ManageClassScreenProps {
   courseId: string;
   folders: Folder[];
+  currentUser: any;
   onClose: () => void;
   onFoldersUpdated: () => void;
 }
@@ -27,6 +19,7 @@ interface ManageClassScreenProps {
 export default function ManageClassScreen({
   courseId,
   folders,
+  currentUser,
   onClose,
   onFoldersUpdated,
 }: ManageClassScreenProps) {
@@ -39,9 +32,22 @@ export default function ManageClassScreen({
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
-  /**
-   * Add new folder
-   */
+  // Check if user has instructor privileges (faculty, admin, or ta)
+  const isInstructor = ["FACULTY", "ADMIN", "TA"].includes(currentUser?.role?.toUpperCase() || "");
+
+  // Redirect if not authorized
+  useEffect(() => {
+    if (!isInstructor) {
+      console.warn("User is not authorized to manage class");
+      onClose();
+    }
+  }, [isInstructor, onClose]);
+
+  useEffect(() => {
+    setFoldersList(folders);
+    setSelectedFolderIds((prev) => prev.filter((id) => folders.some((f) => f._id === id)));
+  }, [folders]);
+
   const handleAddFolder = async () => {
     if (!newFolderName.trim()) {
       alert("Please enter a folder name");
@@ -62,6 +68,7 @@ export default function ManageClassScreen({
         const newFolder = await response.json();
         setFoldersList([...foldersList, newFolder]);
         setNewFolderName("");
+        onFoldersUpdated();
       }
     } catch (error) {
       console.error("Error adding folder:", error);
@@ -70,9 +77,6 @@ export default function ManageClassScreen({
     }
   };
 
-  /**
-   * Save edited folder name
-   */
   const handleSaveEdit = async (folderId: string) => {
     if (!editingFolderName.trim()) {
       alert("Please enter a folder name");
@@ -97,15 +101,13 @@ export default function ManageClassScreen({
           )
         );
         setEditingFolderId(null);
+        onFoldersUpdated();
       }
     } catch (error) {
       console.error("Error editing folder:", error);
     }
   };
 
-  /**
-   * Delete selected folders
-   */
   const handleDeleteFolders = async () => {
     if (selectedFolderIds.length === 0) {
       alert("Please select folders to delete");
@@ -129,15 +131,13 @@ export default function ManageClassScreen({
           foldersList.filter((f) => !selectedFolderIds.includes(f._id))
         );
         setSelectedFolderIds([]);
+        onFoldersUpdated();
       }
     } catch (error) {
       console.error("Error deleting folders:", error);
     }
   };
 
-  /**
-   * Toggle folder selection
-   */
   const handleToggleFolder = (folderId: string) => {
     setSelectedFolderIds((prev) =>
       prev.includes(folderId)
@@ -155,7 +155,6 @@ export default function ManageClassScreen({
         </div>
 
         <div className="pazza-manage-content">
-          {/* Current Folders */}
           <div className="pazza-manage-section">
             <h3>Current Folders</h3>
             <div className="pazza-folders-list">
@@ -201,7 +200,6 @@ export default function ManageClassScreen({
             </div>
           </div>
 
-          {/* Add Folder */}
           <div className="pazza-manage-section">
             <h3>Add Folder</h3>
             <div className="pazza-add-folder">
@@ -221,7 +219,6 @@ export default function ManageClassScreen({
             </div>
           </div>
 
-          {/* Delete Folders */}
           <div className="pazza-manage-section">
             <h3>Delete Folders</h3>
             <div className="pazza-delete-folders">

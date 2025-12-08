@@ -1,15 +1,3 @@
-/**
- * CLASS AT A GLANCE SCREEN
- * Displays when no post is selected
- * Shows statistics about the course's Q&A activity:
- * - Unread posts
- * - Unanswered questions
- * - Total posts
- * - Instructor responses count
- * - Student responses count
- * - Enrolled students count
- */
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,20 +13,34 @@ interface Post {
 
 interface ClassAtAGlanceScreenProps {
   posts: Post[];
+  courseId: string;
 }
 
-export default function ClassAtAGlanceScreen({ posts }: ClassAtAGlanceScreenProps) {
+export default function ClassAtAGlanceScreen({ posts, courseId }: ClassAtAGlanceScreenProps) {
   const [enrolledCount, setEnrolledCount] = useState(0);
 
-  useEffect(() => {
-    // In a real app, fetch enrolled students from API
-    // For now, hardcode a placeholder
-    setEnrolledCount(25);
-  }, []);
+  const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
-  /**
-   * Calculate statistics
-   */
+  useEffect(() => {
+    const loadEnrollmentCount = async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/users`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Unable to load enrollment");
+        }
+        const users = await response.json();
+        setEnrolledCount((users || []).length);
+      } catch (error) {
+        setEnrolledCount(0);
+        console.error("Error loading enrollment count:", error);
+      }
+    };
+
+    loadEnrollmentCount();
+  }, [SERVER_URL, courseId]);
+
   const stats = {
     totalPosts: posts.length,
     questions: posts.filter((p) => p.type === "QUESTION").length,

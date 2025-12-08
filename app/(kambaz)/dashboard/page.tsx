@@ -152,8 +152,15 @@ export default function Dashboard() {
                                                 { course.name }
                                             </CardTitle>
                                             <CardText
-                                            className = "wd-dashboard-course-description overflow-hidden"
-                                            style = {{ height: "100px" }}>
+                                            className = "wd-dashboard-course-description"
+                                            style = {{ 
+                                                height: "100px",
+                                                display: "-webkit-box",
+                                                WebkitLineClamp: 4,
+                                                WebkitBoxOrient: "vertical",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis"
+                                            }}>
                                                 { course.description }
                                             </CardText>
                                                                                         <Button variant = "primary" >
@@ -211,7 +218,19 @@ export default function Dashboard() {
                                                     <CardImg src = { course.image || img } variant = "top" width = "100%" height = {160} />
                                                     <CardBody>
                                                         <CardTitle className = "text-nowrap overflow-hidden"> { course.name } </CardTitle>
-                                                        <CardText style = {{ height:"100px" }}> { course.description } </CardText>
+                                                        <CardText 
+                                                            className = "overflow-hidden text-truncate" 
+                                                            style = {{ 
+                                                                height: "100px",
+                                                                display: "-webkit-box",
+                                                                WebkitLineClamp: 4,
+                                                                WebkitBoxOrient: "vertical",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis"
+                                                            }}
+                                                        > 
+                                                            { course.description } 
+                                                        </CardText>
                                                         { currentUser && (
                                                             <Button
                                                                 className = "btn btn-outline-primary"
