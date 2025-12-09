@@ -22,7 +22,7 @@ export default function FolderTabs({ folders, activeFolder, onFolderChange }: Fo
         <button
           key={folder}
           className={`pazza-folder-tab ${activeFolder === folder ? "active" : ""}`}
-          onClick={() => onFolderChange(folder)}
+          onClick={() => onFolderChange(activeFolder === folder ? "" : folder)}
         >
           <span className="pazza-folder-icon">📁</span>
           {folder}
@@ -33,7 +33,7 @@ export default function FolderTabs({ folders, activeFolder, onFolderChange }: Fo
         <button
           key={folder._id}
           className={`pazza-folder-tab ${activeFolder === folder.name ? "active" : ""}`}
-          onClick={() => onFolderChange(folder.name)}
+          onClick={() => onFolderChange(activeFolder === folder.name ? "" : folder.name)}
         >
           <span className="pazza-folder-icon">📁</span>
           {folder.name}

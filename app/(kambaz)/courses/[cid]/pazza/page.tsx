@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import PazzaHeader from "./components/PazzaHeader";
@@ -8,6 +8,7 @@ import FolderTabs from "./components/FolderTabs";
 import PostListSidebar from "./components/PostListSidebar";
 import NewPostModal from "./components/NewPostModal";
 import PostDetailView from "./components/PostDetailView";
+import ClassAtAGlanceScreen from "./components/ClassAtAGlanceScreen";
 import ManageClassModal from "./components/ManageClassModal";
 import "./pazza.css";
 
@@ -16,7 +17,7 @@ interface Post {
   courseId: string;
   authorId: string;
   authorName: string;
-  authorRole: "STUDENT" | "INSTRUCTOR";
+  authorRole: "STUDENT" | "USER" | "INSTRUCTOR" | "FACULTY" | "TA" | "ADMIN";
   type: "QUESTION" | "NOTE";
   summary: string;
   details: string;
@@ -28,6 +29,8 @@ interface Post {
   hasInstructorAnswer: boolean;
   createdAt: string;
   isPinned?: boolean;
+  goodQuestionCount?: number;
+  hasGoodAnswer?: boolean;
 }
 
 interface Folder {
@@ -58,18 +61,14 @@ export default function PazzaPage() {
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
-  useEffect(() => {
-    fetchData();
-  }, [cid]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async (folderFilter: string = "") => {
     try {
       setIsLoadingPosts(true);
 
       // Fetch posts
       let url = `${SERVER_URL}/api/courses/${cid}/pazza/posts`;
-      if (activeFolder) {
-        url += `?folder=${activeFolder}`;
+      if (folderFilter) {
+        url += `?folder=${encodeURIComponent(folderFilter)}`;
       }
       const postsResponse = await fetch(url, {
         credentials: "include",
@@ -84,10 +83,6 @@ export default function PazzaPage() {
       const foldersData = await foldersResponse.json();
       setFolders(foldersData);
 
-      if (activeFolder === "" && foldersData.length > 0) {
-        setActiveFolder(foldersData[0].name);
-      }
-
       // Fetch course info
       const courseResponse = await fetch(`${SERVER_URL}/api/courses/${cid}`, {
         credentials: "include",
@@ -101,7 +96,11 @@ export default function PazzaPage() {
     } finally {
       setIsLoadingPosts(false);
     }
-  };
+  }, [cid, SERVER_URL]);
+
+  useEffect(() => {
+    fetchData(activeFolder);
+  }, [cid, activeFolder, fetchData]);
 
   const handlePostSelect = async (post: Post) => {
     setSelectedPost(post);
@@ -152,7 +151,9 @@ export default function PazzaPage() {
   };
 
   const handlePostCreated = () => {
-    fetchData();
+    // Fetch all posts after creating a new one to show in all folders
+    setActiveFolder("");
+    fetchData("");
     setShowNewPost(false);
     setOpenTabs(prev => prev.filter(tab => tab.type !== "newpost"));
   };
@@ -165,44 +166,20 @@ export default function PazzaPage() {
     fetchData();
   };
 
-  const handlePostUpdated = () => {
+  const handlePostUpdated = (updated?: Partial<Post> & { _id?: string }) => {
+    // Merge changes locally so sidebar/detail stay in sync without forcing a full refetch
+    if (updated?._id) {
+      setPosts((prev) => prev.map((p) => (p._id === updated._id ? { ...p, ...updated } : p)));
+      setSelectedPost((prev) => (prev?._id === updated._id ? { ...prev, ...updated } : prev));
+      return;
+    }
+
+    // Fallback to refetch only when no id is provided
     fetchData();
   };
 
   const handleFoldersUpdated = () => {
     fetchData();
-  };
-
-  const handlePinPosts = async (postIds: string[]) => {
-    try {
-      for (const postId of postIds) {
-        await fetch(`${SERVER_URL}/api/courses/${cid}/pazza/posts/${postId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ isPinned: true }),
-        });
-      }
-      fetchData();
-    } catch (error) {
-      console.error("Error pinning posts:", error);
-    }
-  };
-
-  const handleUnpinPosts = async (postIds: string[]) => {
-    try {
-      for (const postId of postIds) {
-        await fetch(`${SERVER_URL}/api/courses/${cid}/pazza/posts/${postId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ isPinned: false }),
-        });
-      }
-      fetchData();
-    } catch (error) {
-      console.error("Error unpinning posts:", error);
-    }
   };
 
   return (
@@ -233,8 +210,6 @@ export default function PazzaPage() {
               searchQuery={searchQuery}
               isLoading={isLoadingPosts}
               onNewPost={handleNewPostClick}
-              onPinPosts={handlePinPosts}
-              onUnpinPosts={handleUnpinPosts}
               currentUser={currentUser}
             />
 
@@ -275,7 +250,9 @@ export default function PazzaPage() {
 
               {/* Content Area */}
               <div className="pazza-tab-content">
-                {activeRightTab === "post" && (
+                {!selectedPost && openTabs.length === 0 ? (
+                  <ClassAtAGlanceScreen posts={posts} courseId={cid} />
+                ) : activeRightTab === "post" ? (
                   <PostDetailView
                     selectedPost={selectedPost}
                     courseId={cid}
@@ -283,9 +260,7 @@ export default function PazzaPage() {
                     onPostDeleted={handlePostDeleted}
                     onPostUpdated={handlePostUpdated}
                   />
-                )}
-
-                {activeRightTab === "newpost" && showNewPost && (
+                ) : activeRightTab === "newpost" && showNewPost ? (
                   <NewPostModal
                     courseId={cid}
                     courseName={courseInfo?.name}
@@ -295,7 +270,7 @@ export default function PazzaPage() {
                     }}
                     onPostCreated={handlePostCreated}
                   />
-                )}
+                ) : null}
               </div>
             </div>
           </div>

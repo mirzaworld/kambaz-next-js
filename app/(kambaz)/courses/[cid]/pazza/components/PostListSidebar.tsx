@@ -9,7 +9,7 @@ interface Post {
   summary: string;
   type: "QUESTION" | "NOTE";
   authorName: string;
-  authorRole: "STUDENT" | "INSTRUCTOR";
+  authorRole: "STUDENT" | "USER" | "INSTRUCTOR" | "FACULTY" | "TA" | "ADMIN";
   hasStudentAnswer: boolean;
   hasInstructorAnswer: boolean;
   createdAt: string;
@@ -18,6 +18,8 @@ interface Post {
   folders: string[];
   isPinned?: boolean;
   visibility?: "ENTIRE_CLASS" | "SELECTED_STUDENTS";
+  goodQuestionCount?: number;
+  hasGoodAnswer?: boolean;
 }
 
 interface PostListSidebarProps {
@@ -28,71 +30,28 @@ interface PostListSidebarProps {
   searchQuery: string;
   isLoading: boolean;
   onNewPost: () => void;
-  onPinPosts?: (postIds: string[]) => void;
-  onUnpinPosts?: (postIds: string[]) => void;
   currentUser?: any;
 }
 
-function getDateCategory(date: Date, now: Date) {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
+const startOfWeek = (date: Date) => {
+  const copy = new Date(date);
+  const day = copy.getDay();
+  const diff = (day + 6) % 7; // Monday as start of week
+  copy.setDate(copy.getDate() - diff);
+  copy.setHours(0, 0, 0, 0);
+  return copy;
+};
 
-  const postDate = new Date(date);
-  postDate.setHours(0, 0, 0, 0);
+const formatWeekRangeLabel = (date: Date) => {
+  const start = startOfWeek(date);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
 
-  if (postDate.getTime() === today.getTime()) return "TODAY";
-  if (postDate.getTime() === yesterday.getTime()) return "YESTERDAY";
-  
-  const diffDays = (today.getTime() - postDate.getTime()) / (1000 * 60 * 60 * 24);
-  if (diffDays <= 7) return "LAST WEEK";
-  
-  return "OLDER";
-}
+  const formatOptions: Intl.DateTimeFormatOptions = { month: "numeric", day: "numeric" };
+  const startLabel = start.toLocaleDateString(undefined, formatOptions);
+  const endLabel = end.toLocaleDateString(undefined, formatOptions);
 
-function groupPosts(posts: Post[]) {
-  const now = new Date();
-  const groups: { [key: string]: Post[] } = {
-    PINNED: [],
-    TODAY: [],
-    YESTERDAY: [],
-    "LAST WEEK": [],
-    OLDER: [],
-  };
-
-  for (const post of posts) {
-    const cat = getDateCategory(new Date(post.createdAt), now);
-    if (groups[cat]) {
-      groups[cat].push(post);
-    }
-  }
-
-  return groups;
-}
-
-const groupPostsBySection = (posts: Post[]) => {
-  const now = new Date();
-  const grouped: { [key: string]: Post[] } = {
-    PINNED: [],
-    TODAY: [],
-    YESTERDAY: [],
-    "LAST WEEK": [],
-    OLDER: [],
-  };
-
-  posts.forEach((post) => {
-    if (post.isPinned) {
-      grouped.PINNED.push(post);
-    } else {
-      const section = getDateCategory(new Date(post.createdAt), now);
-      if (grouped[section]) {
-        grouped[section].push(post);
-      }
-    }
-  });
-
-  return grouped;
+  return `${startLabel} - ${endLabel}`;
 };
 
 export default function PostListSidebar({
@@ -103,59 +62,59 @@ export default function PostListSidebar({
   searchQuery,
   isLoading,
   onNewPost,
-  onPinPosts,
-  onUnpinPosts,
   currentUser,
 }: PostListSidebarProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filterBy, setFilterBy] = useState<"all" | "unread" | "updated" | "unresolved" | "following">("all");
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
-    PINNED: true,
+    "PINNED POST": true,
     TODAY: true,
     YESTERDAY: true,
     "LAST WEEK": true,
   });
-  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set());
-  const [showActionsMenu, setShowActionsMenu] = useState(false);
-
   const isInstructor = currentUser?.role === "INSTRUCTOR" || currentUser?.role === "FACULTY";
 
-  const handleTogglePostSelection = (postId: string) => {
-    setSelectedPostIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(postId)) {
-        newSet.delete(postId);
-      } else {
-        newSet.add(postId);
-      }
-      return newSet;
-    });
-  };
+  const startOfToday = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }, []);
 
-  const handlePinSelected = async () => {
-    if (selectedPostIds.size > 0 && onPinPosts) {
-      await onPinPosts(Array.from(selectedPostIds));
-      setSelectedPostIds(new Set());
-      setShowActionsMenu(false);
-    }
-  };
+  const startOfYesterday = useMemo(() => {
+    const yesterday = new Date(startOfToday);
+    yesterday.setDate(startOfToday.getDate() - 1);
+    return yesterday;
+  }, [startOfToday]);
 
-  const handleUnpinSelected = async () => {
-    if (selectedPostIds.size > 0 && onUnpinPosts) {
-      await onUnpinPosts(Array.from(selectedPostIds));
-      setSelectedPostIds(new Set());
-      setShowActionsMenu(false);
-    }
-  };
+  const startOfCurrentWeek = useMemo(() => startOfWeek(new Date()), []);
 
-  const filteredPosts = useMemo(() => {
-    let result = posts;
+  const startOfLastWeek = useMemo(() => {
+    const copy = new Date(startOfCurrentWeek);
+    copy.setDate(copy.getDate() - 7);
+    return copy;
+  }, [startOfCurrentWeek]);
+
+  const endOfLastWeek = useMemo(() => {
+    const end = new Date(startOfCurrentWeek);
+    end.setMilliseconds(-1);
+    return end;
+  }, [startOfCurrentWeek]);
+
+  const groupedData = useMemo(() => {
+    const now = new Date();
+    const sorted = [...posts].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    const pinnedPosts = sorted.filter((p) => p.isPinned);
+    let result = sorted.filter((p) => !p.isPinned);
 
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       result = result.filter(
         (p) =>
-          p.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.authorName.toLowerCase().includes(searchQuery.toLowerCase())
+          p.summary.toLowerCase().includes(query) ||
+          p.authorName.toLowerCase().includes(query)
       );
     }
 
@@ -165,11 +124,58 @@ export default function PostListSidebar({
       );
     }
 
-    return result;
-  }, [posts, searchQuery, filterBy]);
+    const groups: Record<string, Post[]> = {};
+    const sortKeyBySection: Record<string, number> = {};
 
-  const grouped = groupPostsBySection(filteredPosts);
-  const sectionOrder = ["PINNED", "TODAY", "YESTERDAY", "LAST WEEK", "OLDER"];
+    if (pinnedPosts.length) {
+      groups["PINNED POST"] = pinnedPosts;
+      sortKeyBySection["PINNED POST"] = Number.MAX_SAFE_INTEGER;
+    }
+
+    result.forEach((post) => {
+      const postDate = new Date(post.createdAt);
+      let sectionLabel = "OLDER";
+      let sortKey = startOfWeek(postDate).getTime();
+
+      if (postDate >= startOfToday) {
+        sectionLabel = "TODAY";
+        sortKey = startOfToday.getTime();
+      } else if (postDate >= startOfYesterday) {
+        sectionLabel = "YESTERDAY";
+        sortKey = startOfYesterday.getTime();
+      } else if (postDate >= startOfLastWeek && postDate <= endOfLastWeek) {
+        sectionLabel = "LAST WEEK";
+        sortKey = startOfLastWeek.getTime();
+      } else {
+        const weekStart = startOfWeek(postDate);
+        sectionLabel = formatWeekRangeLabel(weekStart);
+        sortKey = weekStart.getTime();
+      }
+
+      if (!groups[sectionLabel]) {
+        groups[sectionLabel] = [];
+        sortKeyBySection[sectionLabel] = sortKey;
+      }
+
+      groups[sectionLabel].push(post);
+    });
+
+    const baseOrder = ["PINNED POST", "TODAY", "YESTERDAY", "LAST WEEK"]
+      .filter((section) => groups[section]);
+
+    const weekSections = Object.keys(groups)
+      .filter((section) => !baseOrder.includes(section))
+      .sort((a, b) => (sortKeyBySection[b] || 0) - (sortKeyBySection[a] || 0));
+
+    const sectionOrder = [...baseOrder, ...weekSections];
+
+    return { groups, sectionOrder };
+  }, [posts, searchQuery, filterBy, startOfToday, startOfYesterday, startOfLastWeek, endOfLastWeek]);
+
+  const totalVisiblePosts = groupedData.sectionOrder.reduce(
+    (count, section) => count + (groupedData.groups[section]?.length || 0),
+    0
+  );
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({
@@ -186,7 +192,7 @@ export default function PostListSidebar({
           title="Show sidebar"
           onClick={() => setSidebarOpen(true)}
         >
-          ◀
+          ▶
         </button>
       </div>
     );
@@ -246,27 +252,12 @@ export default function PostListSidebar({
         />
       </div>
 
-      {/* Show Actions with Pin/Unpin */}
+      {/* Actions Dropdown */}
       {isInstructor && (
-        <div className="pazza-show-actions-row">
-          <div className="pazza-actions-dropdown-container">
-            <button 
-              className="pazza-actions-btn"
-              onClick={() => setShowActionsMenu(!showActionsMenu)}
-            >
-              Actions {selectedPostIds.size > 0 && `(${selectedPostIds.size})`} ▾
-            </button>
-            {showActionsMenu && selectedPostIds.size > 0 && (
-              <div className="pazza-sidebar-actions-menu">
-                <button className="pazza-sidebar-action-item" onClick={handlePinSelected}>
-                  📌 Pin selected posts
-                </button>
-                <button className="pazza-sidebar-action-item" onClick={handleUnpinSelected}>
-                  📌 Unpin selected posts
-                </button>
-              </div>
-            )}
-          </div>
+        <div className="pazza-actions-row">
+          <button className="pazza-actions-btn">
+            Actions ▾
+          </button>
         </div>
       )}
 
@@ -274,11 +265,11 @@ export default function PostListSidebar({
       <div className="pazza-posts-list">
         {isLoading ? (
           <div className="pazza-loading">Loading posts...</div>
-        ) : filteredPosts.length === 0 ? (
+        ) : totalVisiblePosts === 0 ? (
           <div className="pazza-empty">No posts yet</div>
         ) : (
-          sectionOrder.map((section) => {
-            const sectionPosts = grouped[section] || [];
+          groupedData.sectionOrder.map((section) => {
+            const sectionPosts = groupedData.groups[section] || [];
             if (sectionPosts.length === 0) return null;
 
             return (
@@ -291,9 +282,6 @@ export default function PostListSidebar({
                     {openSections[section] !== false ? "▼" : "▶"}
                   </span>
                   <span className="pazza-section-label">{section}</span>
-                  {section === "PINNED" && (
-                    <span className="pazza-section-icon">📄</span>
-                  )}
                 </div>
                 {(openSections[section] !== false) &&
                   sectionPosts.map((post) => (
@@ -307,48 +295,85 @@ export default function PostListSidebar({
                         <input
                           type="checkbox"
                           className="pazza-post-checkbox"
-                          checked={selectedPostIds.has(post._id)}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            handleTogglePostSelection(post._id);
-                          }}
                           onClick={(e) => e.stopPropagation()}
                         />
                       )}
-                      <div 
-                        className="pazza-post-content-area"
+                      <div
+                        className="pazza-post-content"
                         onClick={() => onPostSelect(post)}
                       >
-                        <div className="pazza-post-badges">
-                          {section === "PINNED" && (
-                            <span className="pazza-badge pazza-badge-pinned">pinned</span>
-                          )}
-                          {post.authorRole === "INSTRUCTOR" && (
-                            <span className="pazza-badge pazza-badge-instructor">instructor</span>
-                          )}
-                          {post.visibility === "SELECTED_STUDENTS" && (
-                            <span className="pazza-badge pazza-badge-private">private</span>
-                          )}
-                        </div>
-                        <div className="pazza-post-header">
+                        <div className="pazza-post-header-row">
+                          <div className="pazza-post-badges">
+                            {post.authorRole === "INSTRUCTOR" && (
+                              <span className="pazza-badge pazza-badge-instructor">INSTRUCTOR</span>
+                            )}
+                            {post.visibility === "SELECTED_STUDENTS" && (
+                              <span className="pazza-badge pazza-badge-private">PRIVATE</span>
+                            )}
+                          </div>
                           <div className="pazza-post-title">{post.summary}</div>
-                          <div className="pazza-post-time">
-                            {new Date(post.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                          <div className="pazza-post-time-inline">
+                            {(() => {
+                              const postDate = new Date(post.createdAt);
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
+                              const postDay = new Date(postDate);
+                              postDay.setHours(0, 0, 0, 0);
+                              
+                              if (postDay.getTime() === today.getTime()) {
+                                // Show time if posted today
+                                return postDate.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                });
+                              }
+
+                              if (postDay >= startOfLastWeek && postDay <= endOfLastWeek) {
+                                // Show weekday (e.g., Mon) for posts in the last week bucket
+                                return postDate.toLocaleDateString([], {
+                                  weekday: "short",
+                                });
+                              }
+
+                              // Show date for anything older than last week
+                              return postDate.toLocaleDateString([], {
+                                month: "numeric",
+                                day: "numeric",
+                              });
+                            })()}
                           </div>
                         </div>
-                        <div className="pazza-post-description">
-                          {post.details 
-                            ? post.details.replace(/<[^>]*>/g, '').slice(0, 80) + (post.details.length > 80 ? '...' : '')
-                            : "No description"}
-                        </div>
-                        <div className="pazza-post-footer">
-                          <span className="pazza-post-comments">
-                            {post.hasInstructorAnswer ? "✓ Answered" : "0 comments"}
-                          </span>
-                        </div>
+                        {(() => {
+                          let text = post.details
+                            ? post.details.replace(/<[^>]*>/g, "").trim()
+                            : "";
+                          
+                          // Remove standalone "0"
+                          text = text.replace(/\b0\b/g, '').trim();
+                          text = text.replace(/\s{2,}/g, ' ').trim();
+                          
+                          // Only render if there's actual content
+                          if (!text || text.length === 0) {
+                            return null;
+                          }
+                          
+                          const truncated = text.slice(0, 80) + (text.length > 80 ? "..." : "");
+                          return (
+                            <div className="pazza-post-description">
+                              {truncated}
+                            </div>
+                          );
+                        })()}
+                        {(post.goodQuestionCount || 0) > 0 && (
+                          <div className="pazza-post-instructor-tag">
+                            ♦ An instructor thinks this is a good question
+                          </div>
+                        )}
+                        {post.hasGoodAnswer && (
+                          <div className="pazza-post-instructor-tag">
+                            ♦ An instructor thinks this is a good answer
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}

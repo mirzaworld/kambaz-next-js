@@ -115,7 +115,10 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
       setIsSubmitting(true);
 
       // Map FACULTY role to INSTRUCTOR for backend compatibility
-      const authorRole = currentUser.role === "FACULTY" ? "INSTRUCTOR" : currentUser.role;
+      // Normalize role for API: USER -> STUDENT, FACULTY -> INSTRUCTOR
+      let authorRole = currentUser.role;
+      if (authorRole === "USER") authorRole = "STUDENT";
+      if (authorRole === "FACULTY") authorRole = "INSTRUCTOR";
 
       const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/posts`, {
         method: "POST",
