@@ -64,7 +64,7 @@ export default function ClassAtAGlanceScreen({ posts, courseId }: ClassAtAGlance
   const stats = {
     totalPosts: posts.length,
     unanswered: posts.filter(
-      (p) => p.type === "QUESTION" && !p.hasInstructorAnswer && !p.hasStudentAnswer
+      (p) => p.type === "QUESTION" && !p.hasInstructorAnswer
     ).length,
     instructorResponses: posts.filter((p) => p.hasInstructorAnswer).length,
     studentResponses: posts.filter((p) => p.hasStudentAnswer).length,
