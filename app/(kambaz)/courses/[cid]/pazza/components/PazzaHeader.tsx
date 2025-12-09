@@ -40,7 +40,7 @@ export default function PazzaHeader({
 
           {/* Course Info */}
           <div className="pazza-course-info">
-            <span className="pazza-course-code">{courseInfo?.number || "CS 0000-00"}</span>
+            <span className="pazza-course-code">{courseInfo?.number || courseId}</span>
           </div>
 
           {/* Navigation Tabs */}

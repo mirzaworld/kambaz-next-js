@@ -4,14 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";
 
-// Explicitly unwrap default export to avoid chunk resolution hiccups
-const ReactQuill = dynamic(
-  () => import("react-quill").then((mod) => mod.default),
-  {
-    ssr: false,
-    loading: () => <div className="pazza-quill-loading">Loading editor...</div>,
-  }
-);
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface Post {
   _id: string;
@@ -100,6 +93,9 @@ export default function PostDetailView({
   const [showInstructorEditor, setShowInstructorEditor] = useState(false);
   const [studentAnswerContent, setStudentAnswerContent] = useState("");
   const [instructorAnswerContent, setInstructorAnswerContent] = useState("");
+  const [studentEditorMode, setStudentEditorMode] = useState("rich"); // rich, plain, markdown
+  const [instructorEditorMode, setInstructorEditorMode] = useState("rich"); // rich, plain, markdown
+  const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
 
   const [newDiscussionContent, setNewDiscussionContent] = useState("");
   const [replyToDiscussion, setReplyToDiscussion] = useState<string | null>(null);
@@ -110,9 +106,6 @@ export default function PostDetailView({
   const [editingPost, setEditingPost] = useState(false);
   const [editPostSummary, setEditPostSummary] = useState("");
   const [editPostDetails, setEditPostDetails] = useState("");
-
-  const [editingAnswerId, setEditingAnswerId] = useState<string | null>(null);
-  const [editAnswerContent, setEditAnswerContent] = useState("");
 
   const [editingDiscussionId, setEditingDiscussionId] = useState<string | null>(null);
   const [editDiscussionContent, setEditDiscussionContent] = useState("");
@@ -181,6 +174,27 @@ export default function PostDetailView({
     if (!effectivePost) return;
     try {
       setIsLoading(true);
+
+      // Fetch the post itself to get updated flags (hasInstructorAnswer, hasStudentAnswer)
+      const postResponse = await fetch(
+        `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}`,
+        { credentials: "include" }
+      );
+      if (postResponse.ok) {
+        const updatedPost = await postResponse.json();
+        // Update the post metadata with latest flags
+        setPostMeta((prev) => ({
+          ...prev,
+          hasInstructorAnswer: updatedPost.hasInstructorAnswer,
+          hasStudentAnswer: updatedPost.hasStudentAnswer,
+        }));
+        // Also notify parent component to update the post in the list
+        onPostUpdated({
+          _id: effectivePost._id,
+          hasInstructorAnswer: updatedPost.hasInstructorAnswer,
+          hasStudentAnswer: updatedPost.hasStudentAnswer,
+        });
+      }
 
       const answersResponse = await fetch(
         `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}/answers`,
@@ -355,23 +369,29 @@ export default function PostDetailView({
   const handleSubmitStudentAnswer = async () => {
     if (!studentAnswerContent.trim() || !effectivePost || !currentUser) return;
     try {
-      const response = await fetch(
-        `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}/answers`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            content: studentAnswerContent,
-            authorId: currentUser._id,
-            authorName: `${currentUser.firstName} ${currentUser.lastName}`,
-            authorRole: "STUDENT",
-          }),
-        }
-      );
+      // If editing, update existing answer; otherwise create a new one
+      const isEditing = Boolean(editingAnswerId);
+      const endpoint = isEditing
+        ? `${SERVER_URL}/api/courses/${courseId}/pazza/answers/${editingAnswerId}`
+        : `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}/answers`;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          content: studentAnswerContent,
+          authorId: currentUser._id,
+          authorName: `${currentUser.firstName} ${currentUser.lastName}`,
+          authorRole: "STUDENT",
+        }),
+      });
+
       if (response.ok) {
         setStudentAnswerContent("");
         setShowStudentEditor(false);
+        setEditingAnswerId(null);
         loadPostContent();
       }
     } catch (error) {
@@ -385,24 +405,29 @@ export default function PostDetailView({
       return;
     }
     try {
-      const response = await fetch(
-        `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}/answers`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            content: instructorAnswerContent,
-            authorId: currentUser._id,
-            authorName: `${currentUser.firstName} ${currentUser.lastName}`,
-            authorRole: "INSTRUCTOR",
-          }),
-        }
-      );
+      // If editing, update existing answer; otherwise create a new one
+      const isEditing = Boolean(editingAnswerId);
+      const endpoint = isEditing
+        ? `${SERVER_URL}/api/courses/${courseId}/pazza/answers/${editingAnswerId}`
+        : `${SERVER_URL}/api/courses/${courseId}/pazza/posts/${effectivePost._id}/answers`;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          content: instructorAnswerContent,
+          authorId: currentUser._id,
+          authorName: `${currentUser.firstName} ${currentUser.lastName}`,
+          authorRole: "INSTRUCTOR",
+        }),
+      });
       console.log("Instructor answer response:", response.status, response.ok);
       if (response.ok) {
         setInstructorAnswerContent("");
         setShowInstructorEditor(false);
+        setEditingAnswerId(null);
         loadPostContent();
       } else {
         const errorData = await response.json();
@@ -536,7 +561,10 @@ export default function PostDetailView({
   const handleStartEditPost = () => {
     if (!effectivePost) return;
     setEditPostSummary(effectivePost.summary);
-    setEditPostDetails(effectivePost.details);
+    // Strip HTML tags from details for editing
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = effectivePost.details;
+    setEditPostDetails(tempDiv.textContent || tempDiv.innerText || effectivePost.details);
     setEditingPost(true);
     setShowActionsMenu(null);
   };
@@ -570,36 +598,16 @@ export default function PostDetailView({
   };
 
   const handleStartEditAnswer = (answer: Answer) => {
+    // Open rich editor for editing this answer
     setEditingAnswerId(answer._id);
-    setEditAnswerContent(answer.content);
+    if (answer.authorRole === "STUDENT") {
+      setStudentAnswerContent(answer.content);
+      setShowStudentEditor(true);
+    } else if (answer.authorRole === "INSTRUCTOR" || answer.authorRole === "FACULTY") {
+      setInstructorAnswerContent(answer.content);
+      setShowInstructorEditor(true);
+    }
     setShowActionsMenu(null);
-  };
-
-  const handleSaveAnswerEdit = async () => {
-    if (!editingAnswerId) return;
-    const original = answers.find((a) => a._id === editingAnswerId);
-    if (original && original.content === editAnswerContent) {
-      setEditingAnswerId(null);
-      return;
-    }
-    try {
-      const response = await fetch(
-        `${SERVER_URL}/api/courses/${courseId}/pazza/answers/${editingAnswerId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ content: editAnswerContent }),
-        }
-      );
-      if (response.ok) {
-        setEditingAnswerId(null);
-        setEditAnswerContent("");
-        loadPostContent();
-      }
-    } catch (error) {
-      console.error("Error updating answer:", error);
-    }
   };
 
   const handleStartEditDiscussion = (discussion: Discussion) => {
@@ -667,7 +675,6 @@ export default function PostDetailView({
     return null;
   }
 
-  const studentAnswers = answers.filter((a) => a.authorRole === "STUDENT");
   const instructorAnswers = answers.filter((a) => a.authorRole === "INSTRUCTOR" || a.authorRole === "FACULTY");
   const canEditPost = isInstructor || isAuthor;
   const canEditAnswer = (answer: Answer) => isInstructor || answer.authorId === currentUser?._id;
@@ -915,36 +922,92 @@ export default function PostDetailView({
             ) : null}
 
             {showInstructorEditor && (
-              <div className="pazza-rich-text-editor">
-                <ReactQuill
-                  value={instructorAnswerContent}
-                  onChange={setInstructorAnswerContent}
-                  theme="snow"
-                  placeholder="Type your answer here..."
-                  modules={{
-                    toolbar: [
-                      ["bold", "italic", "underline", "strike"],
-                      [{ align: [] }],
-                      [{ list: "ordered" }, { list: "bullet" }],
-                      [{ indent: "-1" }, { indent: "+1" }],
-                      ["link", "image"],
-                      ["clean"],
-                    ],
-                  }}
-                />
+              <div className="pazza-instructor-answer-section-editor">
+                <div className="pazza-editor-options">
+                  <div className="pazza-editor-mode-options">
+                    <label>
+                      <input 
+                        type="radio" 
+                        name="instructorEditorMode" 
+                        value="rich" 
+                        checked={instructorEditorMode === "rich"}
+                        onChange={(e) => setInstructorEditorMode(e.target.value)}
+                      />
+                      Rich text editor
+                    </label>
+                    <label>
+                      <input 
+                        type="radio" 
+                        name="instructorEditorMode" 
+                        value="plain" 
+                        checked={instructorEditorMode === "plain"}
+                        onChange={(e) => setInstructorEditorMode(e.target.value)}
+                      />
+                      Plain text editor
+                    </label>
+                    <label>
+                      <input 
+                        type="radio" 
+                        name="instructorEditorMode" 
+                        value="markdown" 
+                        checked={instructorEditorMode === "markdown"}
+                        onChange={(e) => setInstructorEditorMode(e.target.value)}
+                      />
+                      Markdown editor
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pazza-rich-text-editor">
+                  {instructorEditorMode === "rich" ? (
+                    <ReactQuill
+                      value={instructorAnswerContent}
+                      onChange={setInstructorAnswerContent}
+                      theme="snow"
+                      placeholder="Type your answer here..."
+                      modules={{
+                        toolbar: [
+                          ["bold", "italic", "underline", "strike"],
+                          [{ align: [] }],
+                          [{ list: "ordered" }, { list: "bullet" }],
+                          [{ indent: "-1" }, { indent: "+1" }],
+                          ["link", "image"],
+                          ["clean"],
+                        ],
+                      }}
+                    />
+                  ) : (
+                    <textarea
+                      value={instructorAnswerContent}
+                      onChange={(e) => setInstructorAnswerContent(e.target.value)}
+                      className="pazza-plain-textarea"
+                      placeholder="Type your answer here..."
+                      rows={10}
+                    />
+                  )}
+                </div>
                 <div className="pazza-editor-actions">
                   <button 
                     className="pazza-submit-btn" 
                     onClick={handleSubmitInstructorAnswer}
                     disabled={!instructorAnswerContent.trim()}
                   >
-                    Submit
+                    {editingAnswerId ? "Save" : "Submit"}
+                  </button>
+                  <button 
+                    className="pazza-draft-btn" 
+                    onClick={handleSubmitInstructorAnswer}
+                    disabled={!instructorAnswerContent.trim()}
+                  >
+                    Save Draft
                   </button>
                   <button 
                     className="pazza-cancel-btn" 
                     onClick={() => {
                       setShowInstructorEditor(false);
                       setInstructorAnswerContent("");
+                      setInstructorEditorMode("rich");
+                      setEditingAnswerId(null);
                     }}
                   >
                     Cancel
@@ -997,36 +1060,7 @@ export default function PostDetailView({
                         )}
                       </div>
 
-                      {editingAnswerId === answer._id ? (
-                        <div className="pazza-edit-block">
-                          <ReactQuill
-                            value={editAnswerContent}
-                            onChange={setEditAnswerContent}
-                            theme="snow"
-                            modules={{
-                              toolbar: [
-                                ["bold", "italic", "underline"],
-                                ["link"],
-                                [{ list: "ordered" }, { list: "bullet" }],
-                              ],
-                            }}
-                          />
-                          <div className="pazza-editor-actions">
-                            <button className="pazza-submit-btn" onClick={handleSaveAnswerEdit}>
-                              Save
-                            </button>
-                            <button
-                              className="pazza-cancel-btn"
-                              onClick={() => {
-                                setEditingAnswerId(null);
-                                setEditAnswerContent("");
-                              }}
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
+                      {editingAnswerId === answer._id ? null : (
                         <>
                           <div
                             className="pazza-answer-content"
@@ -1051,10 +1085,125 @@ export default function PostDetailView({
                   );
                 })}
                 
+                {!isInstructor && !showStudentEditor && (
+                  <button 
+                    className="pazza-submit-btn" 
+                    onClick={() => {
+                      setEditingAnswerId(null);
+                      setStudentAnswerContent("");
+                      setStudentEditorMode("rich");
+                      setShowStudentEditor(true);
+                    }}
+                  >
+                    Post another answer
+                  </button>
+                )}
+
+                {!isInstructor && showStudentEditor && (
+                  <div className="pazza-student-answer-section">
+                    <div className="pazza-editor-options">
+                      <div className="pazza-editor-mode-options">
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="studentEditorMode" 
+                            value="rich" 
+                            checked={studentEditorMode === "rich"}
+                            onChange={(e) => setStudentEditorMode(e.target.value)}
+                          />
+                          Rich text editor
+                        </label>
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="studentEditorMode" 
+                            value="plain" 
+                            checked={studentEditorMode === "plain"}
+                            onChange={(e) => setStudentEditorMode(e.target.value)}
+                          />
+                          Plain text editor
+                        </label>
+                        <label>
+                          <input 
+                            type="radio" 
+                            name="studentEditorMode" 
+                            value="markdown" 
+                            checked={studentEditorMode === "markdown"}
+                            onChange={(e) => setStudentEditorMode(e.target.value)}
+                          />
+                          Markdown editor
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="pazza-rich-text-editor">
+                      {studentEditorMode === "rich" ? (
+                        <ReactQuill
+                          value={studentAnswerContent}
+                          onChange={setStudentAnswerContent}
+                          theme="snow"
+                          placeholder="Type your answer here..."
+                          modules={{
+                            toolbar: [
+                              ["bold", "italic", "underline", "strike"],
+                              [{ align: [] }],
+                              [{ list: "ordered" }, { list: "bullet" }],
+                              [{ indent: "-1" }, { indent: "+1" }],
+                              ["link", "image"],
+                              ["clean"],
+                            ],
+                          }}
+                        />
+                      ) : (
+                        <textarea
+                          value={studentAnswerContent}
+                          onChange={(e) => setStudentAnswerContent(e.target.value)}
+                          className="pazza-plain-textarea"
+                          placeholder="Type your answer here..."
+                          rows={10}
+                        />
+                      )}
+                    </div>
+
+                    <div className="pazza-editor-actions">
+                      <button 
+                        className="pazza-submit-btn" 
+                        onClick={handleSubmitStudentAnswer}
+                        disabled={!studentAnswerContent.trim()}
+                      >
+                        {editingAnswerId ? "Save" : "Submit"}
+                      </button>
+                      <button 
+                        className="pazza-draft-btn" 
+                        onClick={handleSubmitStudentAnswer}
+                        disabled={!studentAnswerContent.trim()}
+                      >
+                        Save Draft
+                      </button>
+                      <button 
+                        className="pazza-cancel-btn" 
+                        onClick={() => {
+                          setShowStudentEditor(false);
+                          setStudentAnswerContent("");
+                          setStudentEditorMode("rich");
+                          setEditingAnswerId(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 {isInstructor && !showInstructorEditor && (
                   <button 
-                    className="pazza-add-another-answer-btn" 
-                    onClick={() => setShowInstructorEditor(true)}
+                    className="pazza-submit-btn" 
+                    onClick={() => {
+                      setEditingAnswerId(null);
+                      setInstructorAnswerContent("");
+                      setInstructorEditorMode("rich");
+                      setShowInstructorEditor(true);
+                    }}
                   >
                     Post another answer
                   </button>

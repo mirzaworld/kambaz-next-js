@@ -72,6 +72,14 @@
   flex-shrink: 0;
 }
 
+.glance-checkmark.hidden {
+  visibility: hidden;
+}
+
+.glance-checkmark.visible {
+  visibility: visible;
+}
+
 .glance-status-text {
   font-size: 15px;
   color: #333;

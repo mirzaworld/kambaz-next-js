@@ -2454,6 +2454,91 @@
   background: #5a6268;
 }
 
+.pazza-draft-btn {
+  background: #e2e6ea;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pazza-draft-btn:hover {
+  background: #d5dce0;
+}
+
+.pazza-draft-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pazza-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Editor Options Section */
+.pazza-editor-options {
+  padding: 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.pazza-editor-mode-options {
+  display: flex;
+  gap: 20px;
+}
+
+.pazza-editor-mode-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  margin: 0;
+}
+
+.pazza-editor-mode-options input[type="radio"] {
+  cursor: pointer;
+  margin: 0;
+}
+
+.pazza-rich-text-editor {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0;
+}
+
+.pazza-plain-textarea {
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  padding: 12px;
+  border: none;
+  border-radius: 3px;
+  resize: vertical;
+  min-height: 200px;
+}
+
+.pazza-student-answer-section {
+  margin: 16px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pazza-instructor-answer-section-editor {
+  margin: 16px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
 /* Discussions Section */
 .pazza-discussions-title {
   font-size: 16px;

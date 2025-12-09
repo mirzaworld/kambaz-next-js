@@ -251,7 +251,7 @@ export default function PazzaPage() {
               {/* Content Area */}
               <div className="pazza-tab-content">
                 {!selectedPost && openTabs.length === 0 ? (
-                  <ClassAtAGlanceScreen posts={posts} courseId={cid} />
+                  <ClassAtAGlanceScreen courseId={cid} />
                 ) : activeRightTab === "post" ? (
                   <PostDetailView
                     selectedPost={selectedPost}

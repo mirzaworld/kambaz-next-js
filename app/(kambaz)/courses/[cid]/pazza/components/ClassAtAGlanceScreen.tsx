@@ -3,26 +3,46 @@
 import { useEffect, useState } from "react";
 import "./components.css";
 
-interface Post {
-  _id: string;
-  type: "QUESTION" | "NOTE";
-  authorRole: "STUDENT" | "USER" | "INSTRUCTOR" | "FACULTY" | "TA" | "ADMIN";
-  hasStudentAnswer: boolean;
-  hasInstructorAnswer: boolean;
-}
-
 interface ClassAtAGlanceScreenProps {
-  posts: Post[];
   courseId: string;
 }
 
-export default function ClassAtAGlanceScreen({ posts, courseId }: ClassAtAGlanceScreenProps) {
+interface Stats {
+  totalPosts: number;
+  unansweredQuestions: number;
+  instructorResponses: number;
+  studentResponses: number;
+  unresolvedFollowups: number;
+}
+
+export default function ClassAtAGlanceScreen({ courseId }: ClassAtAGlanceScreenProps) {
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
+  const [stats, setStats] = useState<Stats>({
+    totalPosts: 0,
+    unansweredQuestions: 0,
+    instructorResponses: 0,
+    studentResponses: 0,
+    unresolvedFollowups: 0,
+  });
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
   useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/stats`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.error("Error loading stats:", error);
+      }
+    };
+
     const loadEnrollmentCount = async () => {
       try {
         const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/users`, {
@@ -53,26 +73,19 @@ export default function ClassAtAGlanceScreen({ posts, courseId }: ClassAtAGlance
         setTotalStudents(students.length);
       } catch (error) {
         setTotalStudents(0);
-        console.error("Error loading total users:", error);
+        console.error("Error loading total students:", error);
       }
     };
 
+    loadStats();
     loadEnrollmentCount();
     loadTotalStudents();
   }, [SERVER_URL, courseId]);
 
-  const stats = {
-    totalPosts: posts.length,
-    unanswered: posts.filter(
-      (p) => p.type === "QUESTION" && !p.hasInstructorAnswer
-    ).length,
-    instructorResponses: posts.filter((p) => p.hasInstructorAnswer).length,
-    studentResponses: posts.filter((p) => p.hasStudentAnswer).length,
-  };
-
   const unreadPosts = 0; // Tracking unread posts would require additional state
   const hasNoUnreadPosts = unreadPosts === 0;
-  const hasNoUnansweredQuestions = stats.unanswered === 0;
+  const hasNoUnansweredQuestions = stats.unansweredQuestions === 0;
+  const hasNoUnresolvedFollowups = stats.unresolvedFollowups === 0;
 
   const enrollmentPercentage = totalStudents > 0 ? (enrolledCount / totalStudents) * 100 : 0;
 
@@ -85,16 +98,23 @@ export default function ClassAtAGlanceScreen({ posts, courseId }: ClassAtAGlance
         {/* Left Column - Status Items with Checkmarks */}
         <div className="glance-status-column">
           <div className="glance-status-item">
-            <span className="glance-checkmark">✓</span>
+            <span className={`glance-checkmark ${hasNoUnreadPosts ? 'visible' : 'hidden'}`}>✓</span>
             <span className="glance-status-text">
               {hasNoUnreadPosts ? "no unread posts" : `${unreadPosts} unread post${unreadPosts !== 1 ? 's' : ''}`}
             </span>
           </div>
 
           <div className="glance-status-item">
-            <span className="glance-checkmark">✓</span>
+            <span className={`glance-checkmark ${hasNoUnansweredQuestions ? 'visible' : 'hidden'}`}>✓</span>
             <span className="glance-status-text">
-              {hasNoUnansweredQuestions ? "no unanswered questions" : `${stats.unanswered} unanswered question${stats.unanswered !== 1 ? 's' : ''}`}
+              {hasNoUnansweredQuestions ? "no unanswered questions" : `${stats.unansweredQuestions} unanswered question${stats.unansweredQuestions !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          <div className="glance-status-item">
+            <span className={`glance-checkmark ${hasNoUnresolvedFollowups ? 'visible' : 'hidden'}`}>✓</span>
+            <span className="glance-status-text">
+              {hasNoUnresolvedFollowups ? "no unanswered followups" : `${stats.unresolvedFollowups} unresolved followup${stats.unresolvedFollowups !== 1 ? 's' : ''}`}
             </span>
           </div>
         </div>
