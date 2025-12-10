@@ -3,7 +3,8 @@ import { courses } from "../database";
 import { v4 as uuidv4 } from "uuid";
 
 const initialState = {
-    courses: courses,
+    // Start empty so unauthenticated Safari users don't see seeded courses
+    courses: [],
 };
 
 const coursesSlice = createSlice({
