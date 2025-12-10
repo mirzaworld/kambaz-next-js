@@ -11,7 +11,9 @@ export default function Session( { children } : { children: any } ) {
   const fetchProfile = async () => {
     try {
       const currentUser = await client.profile();
-      dispatch( setCurrentUser( currentUser ) );
+      if ( currentUser ) {
+        dispatch( setCurrentUser( currentUser ) );
+      }
     } catch ( err ) {
     }
     setPending( false );

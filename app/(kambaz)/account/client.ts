@@ -49,8 +49,12 @@ export const signup = async ( user: any ) => {
 };
 
 export const profile = async () => {
-  const response = await axiosWithCredentials.post( `${ USERS_API }/profile` );
-  return response.data;
+  try {
+    const response = await axiosWithCredentials.post( `${ USERS_API }/profile` );
+    return response.data;
+  } catch ( error ) {
+    return null;
+  }
 };
 
 export const signout = async () => {
