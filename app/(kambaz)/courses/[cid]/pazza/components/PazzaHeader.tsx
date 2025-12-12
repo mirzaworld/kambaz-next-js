@@ -21,15 +21,11 @@ export default function PazzaHeader({
 }: PazzaHeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  // Check if user has instructor privileges (faculty, admin, or ta only)
-  const isInstructor = ["FACULTY", "ADMIN", "TA"].includes(currentUser?.role?.toUpperCase() || "");
+  // Check if user has instructor privileges
+  const isInstructor = ["FACULTY", "ADMIN", "TA", "INSTRUCTOR"].includes(
+    currentUser?.role?.toUpperCase() || ""
+  );
   const userName = `${currentUser?.firstName || ""} ${currentUser?.lastName || ""}`.trim();
-
-  // Debug logging
-  console.log("PazzaHeader - Current User:", currentUser);
-  console.log("PazzaHeader - User Role:", currentUser?.role);
-  console.log("PazzaHeader - Is Instructor:", isInstructor);
-  console.log("PazzaHeader - User Name:", userName);
 
   return (
     <>

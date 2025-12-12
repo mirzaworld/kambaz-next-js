@@ -25,6 +25,7 @@ export default function ClassAtAGlanceScreen({ courseId }: ClassAtAGlanceScreenP
     studentResponses: 0,
     unresolvedFollowups: 0,
   });
+  const [refreshing, setRefreshing] = useState(false);
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
@@ -82,6 +83,26 @@ export default function ClassAtAGlanceScreen({ courseId }: ClassAtAGlanceScreenP
     loadTotalStudents();
   }, [SERVER_URL, courseId]);
 
+  const handleReload = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    setRefreshing(true);
+    try {
+      // Fetch fresh stats with cache busting
+      const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/stats`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error("Error reloading stats:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const unreadPosts = 0; // Tracking unread posts would require additional state
   const hasNoUnreadPosts = unreadPosts === 0;
   const hasNoUnansweredQuestions = stats.unansweredQuestions === 0;
@@ -92,7 +113,7 @@ export default function ClassAtAGlanceScreen({ courseId }: ClassAtAGlanceScreenP
   return (
     <div className="pazza-class-at-glance-screen">
       <h2 className="glance-title">Class at a Glance</h2>
-      <p className="glance-updated">Updated 10 seconds ago. <a href="#" className="glance-reload">Reload</a></p>
+      <p className="glance-updated">Updated {refreshing ? "..." : "just now"}. <a href="#" onClick={handleReload} className="glance-reload">{refreshing ? "Reloading..." : "Reload"}</a></p>
 
       <div className="glance-content">
         {/* Left Column - Status Items with Checkmarks */}

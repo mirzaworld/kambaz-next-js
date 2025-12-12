@@ -455,8 +455,9 @@
   color: white;
   padding: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  position: relative;
-  z-index: 10;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   flex-shrink: 0;
   border-bottom: 3px solid #164a74;
 }
@@ -671,6 +672,9 @@
   overflow-x: auto;
   flex-shrink: 0;
   align-items: center;
+  position: sticky;
+  top: 56px;
+  z-index: 90;
 }
 
 .pazza-folder-tabs::-webkit-scrollbar {
@@ -3051,9 +3055,18 @@
   border-top: 1px solid #f0f0f0;
 }
 
+/* Student Answers Wrapper */
+.pazza-student-answers-wrapper {
+  background: #e8e8e8;
+  border: 1px solid #d5d5d5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
 /* Instructor Answer Section */
 .pazza-instructor-answer-section {
-  background: #fff;
+  background: #e8e8e8;
   border: 1px solid #d5d5d5;
   border-radius: 4px;
   margin-bottom: 16px;
@@ -3105,7 +3118,8 @@
 .pazza-no-answer {
   padding: 20px;
   text-align: center;
-  background: #f9f9f9;
+  background: #fff;
+  margin: 0;
 }
 
 .pazza-no-answer p {
@@ -3132,9 +3146,20 @@
 .pazza-instructor-answer-item {
   padding: 20px;
   border-bottom: 1px solid #f0f0f0;
+  background: #fff;
 }
 
 .pazza-instructor-answer-item:last-child {
+  border-bottom: none;
+}
+
+.pazza-student-answer-item {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+.pazza-student-answer-item:last-child {
   border-bottom: none;
 }
 
@@ -3456,6 +3481,12 @@
   flex-direction: column;
   overflow: hidden;
   background: #fff;
+  transition: all 0.3s ease;
+}
+
+.pazza-right-panel-expanded {
+  flex: 1;
+  max-width: 100%;
 }
 
 /* Tabs Bar */

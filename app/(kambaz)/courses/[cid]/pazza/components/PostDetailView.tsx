@@ -588,8 +588,22 @@ export default function PostDetailView({
         }
       );
       if (response.ok) {
+        const updatedPost = await response.json();
         setEditingPost(false);
-        onPostUpdated();
+        // Update postMeta with new summary and details to reflect changes immediately
+        setPostMeta((prev) => ({
+          ...prev,
+          summary: updatedPost.summary,
+          details: updatedPost.details,
+          updatedAt: updatedPost.updatedAt,
+        }));
+        // Notify parent to update sidebar
+        onPostUpdated({
+          _id: effectivePost._id,
+          summary: updatedPost.summary,
+          details: updatedPost.details,
+          updatedAt: updatedPost.updatedAt,
+        });
         loadPostContent();
       }
     } catch (error) {
@@ -675,9 +689,11 @@ export default function PostDetailView({
     return null;
   }
 
+  const studentAnswers = answers.filter((a) => a.authorRole === "STUDENT" || a.authorRole === "USER");
   const instructorAnswers = answers.filter((a) => a.authorRole === "INSTRUCTOR" || a.authorRole === "FACULTY");
   const canEditPost = isInstructor || isAuthor;
-  const canEditAnswer = (answer: Answer) => isInstructor || answer.authorId === currentUser?._id;
+  const canEditAnswer = (answer: Answer) => isInstructor || (answer.authorId === currentUser?._id && !isInstructor);
+  const canEditPostAsStudent = isAuthor && !isInstructor;
   const canEditDiscussion = (discussion: Discussion) =>
     isInstructor || discussion.authorId === currentUser?._id;
 
@@ -778,7 +794,7 @@ export default function PostDetailView({
         <div className="pazza-post-header">
           <div className="pazza-post-header-left">
             <span className="pazza-post-number">
-              {effectivePost.type === "QUESTION" ? "?" : "📝"} question @{questionHandle} • #{questionNumber}
+              {effectivePost.type === "QUESTION" ? "?" : "📝"} {effectivePost.type === "QUESTION" ? "question" : "note"} @{questionHandle} • #{questionNumber}
             </span>
           </div>
           <div className="pazza-post-header-right">
@@ -834,7 +850,7 @@ export default function PostDetailView({
             <>
               <div className="pazza-post-title-row">
                 <h2 className="pazza-post-title">{effectivePost.summary}</h2>
-                {canEditPost && (
+                {(isInstructor || canEditPostAsStudent) && (
                   <div className="pazza-post-actions-dropdown">
                     <button
                       className="pazza-actions-dropdown-btn"
@@ -897,9 +913,210 @@ export default function PostDetailView({
         )}
       </div>
 
-      {/* INSTRUCTOR'S ANSWER SECTION */}
+      {/* STUDENT ANSWERS SECTION */}
       {effectivePost.type === "QUESTION" && (
         <>
+          <div className="pazza-student-answers-wrapper">
+            <div className="pazza-section-header">
+              <span className="pazza-section-icon">👩‍🎓</span>
+              <h3 className="pazza-section-title">student&apos;s answers</h3>
+              <span className="pazza-section-subtitle">answers contributed by students</span>
+            </div>
+
+            {studentAnswers.length === 0 && !showStudentEditor && (
+              <div className="pazza-no-answer">
+                <p>No student has answered this question yet.</p>
+                {!isInstructor && currentUser && (
+                  <button
+                    className="pazza-submit-answer-btn"
+                    onClick={() => {
+                      setEditingAnswerId(null);
+                      setStudentAnswerContent("");
+                      setStudentEditorMode("rich");
+                      setShowStudentEditor(true);
+                    }}
+                  >
+                    Submit a Student Answer
+                  </button>
+                )}
+              </div>
+            )}
+
+            {studentAnswers.length > 0 && (
+              <>
+                {studentAnswers.map((answer) => {
+                  const canEdit = canEditAnswer(answer);
+                  return (
+                    <div key={answer._id} className="pazza-student-answer-item">
+                      <div className="pazza-answer-header-row">
+                        <span className="pazza-answer-author">
+                          {answer.authorName}
+                          <span className="pazza-role-badge"> ({formatRoleDisplay(answer.authorRole)})</span>
+                        </span>
+                        <span className="pazza-answer-time">
+                          {new Date(answer.createdAt).toLocaleString()}
+                        </span>
+                        {canEdit && (
+                          <div className="pazza-answer-actions-dropdown">
+                            <button
+                              className="pazza-actions-dropdown-btn"
+                              onClick={() =>
+                                setShowActionsMenu(showActionsMenu === answer._id ? null : answer._id)
+                              }
+                            >
+                              Actions ▾
+                            </button>
+                            {showActionsMenu === answer._id && (
+                              <div className="pazza-actions-dropdown-menu">
+                                <button
+                                  className="pazza-actions-dropdown-item"
+                                  onClick={() => handleStartEditAnswer(answer)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className="pazza-actions-dropdown-item pazza-actions-delete"
+                                  onClick={() => handleDeleteAnswer(answer._id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {editingAnswerId === answer._id ? null : (
+                        <>
+                          <div
+                            className="pazza-answer-content"
+                            dangerouslySetInnerHTML={{ __html: answer.content }}
+                          />
+                          {formatEdited(answer.createdAt, answer.updatedAt) && (
+                            <div className="pazza-edited-label">
+                              {formatEdited(answer.createdAt, answer.updatedAt)}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {!isInstructor && !showStudentEditor && (
+                  <button
+                    className="pazza-submit-btn"
+                    onClick={() => {
+                      setEditingAnswerId(null);
+                      setStudentAnswerContent("");
+                      setStudentEditorMode("rich");
+                      setShowStudentEditor(true);
+                    }}
+                  >
+                    Post another answer
+                  </button>
+                )}
+              </>
+            )}
+
+            {!isInstructor && showStudentEditor && (
+              <div className="pazza-student-answer-section">
+                <div className="pazza-editor-options">
+                  <div className="pazza-editor-mode-options">
+                    <label>
+                      <input
+                        type="radio"
+                        name="studentEditorMode"
+                        value="rich"
+                        checked={studentEditorMode === "rich"}
+                        onChange={(e) => setStudentEditorMode(e.target.value)}
+                      />
+                      Rich text editor
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="studentEditorMode"
+                        value="plain"
+                        checked={studentEditorMode === "plain"}
+                        onChange={(e) => setStudentEditorMode(e.target.value)}
+                      />
+                      Plain text editor
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="studentEditorMode"
+                        value="markdown"
+                        checked={studentEditorMode === "markdown"}
+                        onChange={(e) => setStudentEditorMode(e.target.value)}
+                      />
+                      Markdown editor
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pazza-rich-text-editor">
+                  {studentEditorMode === "rich" ? (
+                    <ReactQuill
+                      value={studentAnswerContent}
+                      onChange={setStudentAnswerContent}
+                      theme="snow"
+                      placeholder="Type your answer here..."
+                      modules={{
+                        toolbar: [
+                          ["bold", "italic", "underline", "strike"],
+                          [{ align: [] }],
+                          [{ list: "ordered" }, { list: "bullet" }],
+                          [{ indent: "-1" }, { indent: "+1" }],
+                          ["link", "image"],
+                          ["clean"],
+                        ],
+                      }}
+                    />
+                  ) : (
+                    <textarea
+                      value={studentAnswerContent}
+                      onChange={(e) => setStudentAnswerContent(e.target.value)}
+                      className="pazza-plain-textarea"
+                      placeholder="Type your answer here..."
+                      rows={10}
+                    />
+                  )}
+                </div>
+
+                <div className="pazza-editor-actions">
+                  <button
+                    className="pazza-submit-btn"
+                    onClick={handleSubmitStudentAnswer}
+                    disabled={!studentAnswerContent.trim()}
+                  >
+                    {editingAnswerId ? "Save" : "Submit"}
+                  </button>
+                  <button
+                    className="pazza-draft-btn"
+                    onClick={handleSubmitStudentAnswer}
+                    disabled={!studentAnswerContent.trim()}
+                  >
+                    Save Draft
+                  </button>
+                  <button
+                    className="pazza-cancel-btn"
+                    onClick={() => {
+                      setShowStudentEditor(false);
+                      setStudentAnswerContent("");
+                      setStudentEditorMode("rich");
+                      setEditingAnswerId(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* INSTRUCTOR'S ANSWER SECTION */}
           <div className="pazza-instructor-answer-section">
             <div className="pazza-section-header">
               <span className="pazza-section-icon">💡</span>
@@ -911,8 +1128,8 @@ export default function PostDetailView({
               <div className="pazza-no-answer">
                 <p>The instructor has not responded or answered to this post.</p>
                 {isInstructor && (
-                  <button 
-                    className="pazza-submit-answer-btn" 
+                  <button
+                    className="pazza-submit-answer-btn"
                     onClick={() => setShowInstructorEditor(true)}
                   >
                     Submit an Instructor&apos;s Answer
@@ -1084,117 +1301,7 @@ export default function PostDetailView({
                     </div>
                   );
                 })}
-                
-                {!isInstructor && !showStudentEditor && (
-                  <button 
-                    className="pazza-submit-btn" 
-                    onClick={() => {
-                      setEditingAnswerId(null);
-                      setStudentAnswerContent("");
-                      setStudentEditorMode("rich");
-                      setShowStudentEditor(true);
-                    }}
-                  >
-                    Post another answer
-                  </button>
-                )}
 
-                {!isInstructor && showStudentEditor && (
-                  <div className="pazza-student-answer-section">
-                    <div className="pazza-editor-options">
-                      <div className="pazza-editor-mode-options">
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="studentEditorMode" 
-                            value="rich" 
-                            checked={studentEditorMode === "rich"}
-                            onChange={(e) => setStudentEditorMode(e.target.value)}
-                          />
-                          Rich text editor
-                        </label>
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="studentEditorMode" 
-                            value="plain" 
-                            checked={studentEditorMode === "plain"}
-                            onChange={(e) => setStudentEditorMode(e.target.value)}
-                          />
-                          Plain text editor
-                        </label>
-                        <label>
-                          <input 
-                            type="radio" 
-                            name="studentEditorMode" 
-                            value="markdown" 
-                            checked={studentEditorMode === "markdown"}
-                            onChange={(e) => setStudentEditorMode(e.target.value)}
-                          />
-                          Markdown editor
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="pazza-rich-text-editor">
-                      {studentEditorMode === "rich" ? (
-                        <ReactQuill
-                          value={studentAnswerContent}
-                          onChange={setStudentAnswerContent}
-                          theme="snow"
-                          placeholder="Type your answer here..."
-                          modules={{
-                            toolbar: [
-                              ["bold", "italic", "underline", "strike"],
-                              [{ align: [] }],
-                              [{ list: "ordered" }, { list: "bullet" }],
-                              [{ indent: "-1" }, { indent: "+1" }],
-                              ["link", "image"],
-                              ["clean"],
-                            ],
-                          }}
-                        />
-                      ) : (
-                        <textarea
-                          value={studentAnswerContent}
-                          onChange={(e) => setStudentAnswerContent(e.target.value)}
-                          className="pazza-plain-textarea"
-                          placeholder="Type your answer here..."
-                          rows={10}
-                        />
-                      )}
-                    </div>
-
-                    <div className="pazza-editor-actions">
-                      <button 
-                        className="pazza-submit-btn" 
-                        onClick={handleSubmitStudentAnswer}
-                        disabled={!studentAnswerContent.trim()}
-                      >
-                        {editingAnswerId ? "Save" : "Submit"}
-                      </button>
-                      <button 
-                        className="pazza-draft-btn" 
-                        onClick={handleSubmitStudentAnswer}
-                        disabled={!studentAnswerContent.trim()}
-                      >
-                        Save Draft
-                      </button>
-                      <button 
-                        className="pazza-cancel-btn" 
-                        onClick={() => {
-                          setShowStudentEditor(false);
-                          setStudentAnswerContent("");
-                          setStudentEditorMode("rich");
-                          setEditingAnswerId(null);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
                 {isInstructor && !showInstructorEditor && (
                   <button 
                     className="pazza-submit-btn" 

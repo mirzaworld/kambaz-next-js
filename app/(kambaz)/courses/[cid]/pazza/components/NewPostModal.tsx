@@ -20,9 +20,11 @@ interface NewPostModalProps {
   onCancel?: () => void;
   onClose?: () => void;
   onPostCreated?: () => void;
+  onManageFolders?: () => void;
+  draftPost?: any; // If provided, populate form with draft data
 }
 
-export default function NewPostModal({ courseId, courseName, folders: foldersProp, onClose, onPostCreated, onSubmit, onCancel }: NewPostModalProps) {
+export default function NewPostModal({ courseId, courseName, folders: foldersProp, onClose, onPostCreated, onSubmit, onCancel, onManageFolders, draftPost }: NewPostModalProps) {
   const currentUser = useSelector((state: any) => state.accountReducer?.currentUser);
   const [postType, setPostType] = useState<"QUESTION" | "NOTE">("QUESTION");
   const [visibility, setVisibility] = useState<"ENTIRE_CLASS" | "SELECTED_STUDENTS">("ENTIRE_CLASS");
@@ -34,14 +36,31 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
   const [courseUsers, setCourseUsers] = useState<any[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  const [sendEmail, setSendEmail] = useState(false);
+  const [sendEmail, setSendEmail] = useState<boolean>(false);
+  const [draftId, setDraftId] = useState<string | null>(draftPost?._id || null);
+
+  const ALL_INSTRUCTORS_ID = "__ALL_INSTRUCTORS__";
+
+  const isInstructorRole = (role?: string) =>
+    ["INSTRUCTOR", "FACULTY", "TA", "ADMIN"].includes((role || "").toUpperCase());
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
 
   useEffect(() => {
     loadFolders();
     loadUsers();
-  }, [courseId]);
+    
+    // If editing a draft, populate the form with draft data
+    if (draftPost) {
+      setPostType((draftPost.type as "QUESTION" | "NOTE") || "QUESTION");
+      setVisibility((draftPost.visibility as "ENTIRE_CLASS" | "SELECTED_STUDENTS") || "ENTIRE_CLASS");
+      setSelectedFolders(draftPost.folders && draftPost.folders.length > 0 ? draftPost.folders : []);
+      setSummary(draftPost.summary || "");
+      setDetails(draftPost.details || "");
+      setSelectedUserIds(draftPost.visibleToUserIds || []);
+      setDraftId(draftPost._id);
+    }
+  }, [courseId, draftPost]);
 
   const loadFolders = async () => {
     try {
@@ -68,8 +87,9 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
       });
       if (response.ok) {
         const users = await response.json();
-        const students = (users || []).filter((user: any) => user.role === "STUDENT");
-        setCourseUsers(students);
+        const instructors = (users || []).filter((user: any) => isInstructorRole(user.role));
+        const students = (users || []).filter((user: any) => !isInstructorRole(user.role));
+        setCourseUsers([...instructors, ...students]);
       }
     } catch (error) {
       console.error("Error loading users:", error);
@@ -120,25 +140,139 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
       if (authorRole === "USER") authorRole = "STUDENT";
       if (authorRole === "FACULTY") authorRole = "INSTRUCTOR";
 
-      const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/posts`, {
-        method: "POST",
+      const instructorIds = courseUsers.filter((u) => isInstructorRole(u.role)).map((u) => u._id);
+      const visibleToUserIds =
+        visibility === "SELECTED_STUDENTS"
+          ? Array.from(
+              new Set(
+                selectedUserIds.flatMap((id) =>
+                  id === ALL_INSTRUCTORS_ID ? instructorIds : [id]
+                )
+              )
+            )
+          : [];
+
+      // If editing a draft, publish it; otherwise create a new post
+      if (draftId) {
+        // Publish the draft by calling the publish endpoint
+        const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/posts/${draftId}/publish`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            summary,
+            details,
+            folders: selectedFolders,
+            visibility,
+            visibleToUserIds,
+          }),
+        });
+
+        if (response.ok) {
+          alert("Post published successfully!");
+          if (onPostCreated) onPostCreated();
+          if (onSubmit) onSubmit();
+          if (onClose) onClose();
+          if (onCancel) onCancel();
+        } else {
+          const errorData = await response.json();
+          console.error("Server error:", errorData);
+          alert(`Error publishing post: ${errorData.error || "Unknown error"}`);
+        }
+      } else {
+        // Create a new post
+        const response = await fetch(`${SERVER_URL}/api/courses/${courseId}/pazza/posts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            authorId: currentUser._id,
+            authorName: `${currentUser.firstName} ${currentUser.lastName}`,
+            authorRole: authorRole,
+            type: postType,
+            summary,
+            details,
+            folders: selectedFolders,
+            visibility,
+            visibleToUserIds,
+          }),
+        });
+
+        if (response.ok) {
+          alert("Post created successfully!");
+          if (onPostCreated) onPostCreated();
+          if (onSubmit) onSubmit();
+          if (onClose) onClose();
+          if (onCancel) onCancel();
+        } else {
+          const errorData = await response.json();
+          console.error("Server error:", errorData);
+          alert(`Error creating post: ${errorData.error || "Unknown error"}`);
+        }
+      }
+    } catch (error) {
+      console.error("Error creating post:", error);
+      alert(`Error creating post: ${error instanceof Error ? error.message : "Please try again."}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!currentUser) {
+      alert("User not logged in");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      // Normalize role for API
+      let authorRole = currentUser.role;
+      if (authorRole === "USER") authorRole = "STUDENT";
+      if (authorRole === "FACULTY") authorRole = "INSTRUCTOR";
+
+      const instructorIds = courseUsers.filter((u) => isInstructorRole(u.role)).map((u) => u._id);
+      const visibleToUserIds =
+        visibility === "SELECTED_STUDENTS"
+          ? Array.from(
+              new Set(
+                selectedUserIds.flatMap((id) =>
+                  id === ALL_INSTRUCTORS_ID ? instructorIds : [id]
+                )
+              )
+            )
+          : [];
+
+      const payload = {
+        authorId: currentUser._id,
+        authorName: `${currentUser.firstName} ${currentUser.lastName}`,
+        authorRole: authorRole,
+        type: postType,
+        summary: summary || "Untitled Draft",
+        details: details || "",
+        folders: selectedFolders.length > 0 ? selectedFolders : ["Drafts"],
+        visibility,
+        visibleToUserIds,
+      };
+
+      // If editing existing draft, update it; otherwise create new draft
+      const endpoint = draftId
+        ? `${SERVER_URL}/api/courses/${courseId}/pazza/drafts/${draftId}`
+        : `${SERVER_URL}/api/courses/${courseId}/pazza/drafts`;
+      const method = draftId ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          authorId: currentUser._id,
-          authorName: `${currentUser.firstName} ${currentUser.lastName}`,
-          authorRole: authorRole,
-          type: postType,
-          summary,
-          details,
-          folders: selectedFolders,
-          visibility,
-          visibleToUserIds: visibility === "SELECTED_STUDENTS" ? selectedUserIds : [],
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        alert("Post created successfully!");
+        const savedDraft = await response.json();
+        setDraftId(savedDraft._id);
+        alert("Draft saved successfully!");
         if (onPostCreated) onPostCreated();
         if (onSubmit) onSubmit();
         if (onClose) onClose();
@@ -146,11 +280,11 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
       } else {
         const errorData = await response.json();
         console.error("Server error:", errorData);
-        alert(`Error creating post: ${errorData.error || "Unknown error"}`);
+        alert(`Error saving draft: ${errorData.error || "Unknown error"}`);
       }
     } catch (error) {
-      console.error("Error creating post:", error);
-      alert(`Error creating post: ${error instanceof Error ? error.message : "Please try again."}`);
+      console.error("Error saving draft:", error);
+      alert(`Error saving draft: ${error instanceof Error ? error.message : "Please try again."}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -251,19 +385,27 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
           {/* Selected Students Section */}
           {visibility === "SELECTED_STUDENTS" && (
             <div className="pazza-form-section">
-              <label className="pazza-form-section-label">Select Students</label>
+              <label className="pazza-form-section-label">Select Audience</label>
               {isLoadingUsers ? (
                 <div className="pazza-loading-message">Loading students...</div>
               ) : (
                 <div className="pazza-users-checkbox-grid">
-                  {courseUsers.map((user) => (
+                    <label key={ALL_INSTRUCTORS_ID} className="pazza-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(ALL_INSTRUCTORS_ID)}
+                        onChange={() => handleUserToggle(ALL_INSTRUCTORS_ID)}
+                      />
+                      <span>Instructors</span>
+                    </label>
+                    {courseUsers.map((user) => (
                     <label key={user._id} className="pazza-checkbox-label">
                       <input
                         type="checkbox"
                         checked={selectedUserIds.includes(user._id)}
                         onChange={() => handleUserToggle(user._id)}
                       />
-                      <span>{user.firstName} {user.lastName}</span>
+                        <span>{user.firstName} {user.lastName} ({isInstructorRole(user.role) ? "Instructor" : "Student"})</span>
                     </label>
                   ))}
                 </div>
@@ -291,7 +433,14 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
                   </button>
                 ))}
               </div>
-              <a href="#" className="pazza-manage-folders-link">
+              <a
+                href="#"
+                className="pazza-manage-folders-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (onManageFolders) onManageFolders();
+                }}
+              >
                 Manage and reorder folders
               </a>
             </div>
@@ -386,7 +535,7 @@ export default function NewPostModal({ courseId, courseName, folders: foldersPro
             <button
               type="button"
               className="pazza-btn-draft"
-              onClick={onClose}
+              onClick={handleSaveDraft}
               disabled={isSubmitting}
             >
               Save Draft

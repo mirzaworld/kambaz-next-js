@@ -31,6 +31,8 @@ interface PostListSidebarProps {
   isLoading: boolean;
   onNewPost: () => void;
   currentUser?: any;
+  sidebarOpen: boolean;
+  onToggleSidebar: (open: boolean) => void;
 }
 
 const startOfWeek = (date: Date) => {
@@ -63,8 +65,9 @@ export default function PostListSidebar({
   isLoading,
   onNewPost,
   currentUser,
+  sidebarOpen,
+  onToggleSidebar,
 }: PostListSidebarProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filterBy, setFilterBy] = useState<"all" | "unread" | "updated" | "unresolved" | "following">("all");
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     "PINNED POST": true,
@@ -111,11 +114,14 @@ export default function PostListSidebar({
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
+      result = result.filter((p) => {
+        const plainDetails = (p.details || "").replace(/<[^>]*>/g, "").toLowerCase();
+        return (
           p.summary.toLowerCase().includes(query) ||
-          p.authorName.toLowerCase().includes(query)
-      );
+          p.authorName.toLowerCase().includes(query) ||
+          plainDetails.includes(query)
+        );
+      });
     }
 
     if (filterBy === "unresolved") {
@@ -190,7 +196,7 @@ export default function PostListSidebar({
         <button
           className="pazza-sidebar-toggle"
           title="Show sidebar"
-          onClick={() => setSidebarOpen(true)}
+          onClick={() => onToggleSidebar(true)}
         >
           ▶
         </button>
@@ -205,7 +211,7 @@ export default function PostListSidebar({
         <button
           className="pazza-sidebar-toggle"
           title="Hide sidebar"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => onToggleSidebar(false)}
         >
           ◀
         </button>

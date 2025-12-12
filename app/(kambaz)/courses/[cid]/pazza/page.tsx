@@ -58,8 +58,12 @@ export default function PazzaPage() {
   const [courseInfo, setCourseInfo] = useState<any>(null);
   const [activeRightTab, setActiveRightTab] = useState<"post" | "newpost">("post");
   const [openTabs, setOpenTabs] = useState<Array<{id: string, type: "post" | "newpost", title: string}>>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const SERVER_URL = process.env.NEXT_PUBLIC_HTTP_SERVER || "http://localhost:4000";
+  const isInstructor = ["INSTRUCTOR", "FACULTY", "ADMIN", "TA"].includes(
+    (currentUser?.role || "").toUpperCase()
+  );
 
   const fetchData = useCallback(async (folderFilter: string = "") => {
     try {
@@ -102,7 +106,25 @@ export default function PazzaPage() {
     fetchData(activeFolder);
   }, [cid, activeFolder, fetchData]);
 
+  useEffect(() => {
+    if (!isInstructor && activeTab === "manage") {
+      setActiveTab("qa");
+    }
+  }, [activeTab, isInstructor]);
+
   const handlePostSelect = async (post: Post) => {
+    // If post is a draft, open it in NewPostModal for editing
+    if (post.isPinned === false && post.isPinned !== undefined && (post as any).isDraft) {
+      setSelectedPost(post);
+      setShowNewPost(true);
+      setActiveRightTab("newpost");
+      const draftTabExists = openTabs.find(tab => tab.type === "newpost" && tab.id === post._id);
+      if (!draftTabExists) {
+        setOpenTabs(prev => [...prev, { id: post._id, type: "newpost", title: `Edit: ${post.summary.slice(0, 20)}` }]);
+      }
+      return;
+    }
+
     setSelectedPost(post);
     setActiveRightTab("post");
     
@@ -182,6 +204,16 @@ export default function PazzaPage() {
     fetchData();
   };
 
+  const handleTabChange = (
+    tab: "qa" | "resources" | "statistics" | "manage"
+  ) => {
+    if (tab === "manage" && !isInstructor) {
+      alert("Only instructors can manage the class.");
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   return (
     <div className="pazza-page">
       <PazzaHeader
@@ -189,7 +221,7 @@ export default function PazzaPage() {
         courseInfo={courseInfo}
         currentUser={currentUser}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onNewPost={handleNewPostClick}
       />
 
@@ -211,9 +243,11 @@ export default function PazzaPage() {
               isLoading={isLoadingPosts}
               onNewPost={handleNewPostClick}
               currentUser={currentUser}
+              sidebarOpen={sidebarOpen}
+              onToggleSidebar={setSidebarOpen}
             />
 
-            <div className="pazza-right-panel">
+            <div className={`pazza-right-panel ${!sidebarOpen ? 'pazza-right-panel-expanded' : ''}`}>
               {/* Tab Bar */}
               {openTabs.length > 0 && (
                 <div className="pazza-tabs-bar">
@@ -264,11 +298,13 @@ export default function PazzaPage() {
                   <NewPostModal
                     courseId={cid}
                     courseName={courseInfo?.name}
+                    draftPost={selectedPost && (selectedPost as any).isDraft ? selectedPost : undefined}
                     onClose={() => {
                       setShowNewPost(false);
                       handleCloseTab("newpost");
                     }}
                     onPostCreated={handlePostCreated}
+                    onManageFolders={() => handleTabChange("manage")}
                   />
                 ) : null}
               </div>
@@ -277,7 +313,21 @@ export default function PazzaPage() {
         </>
       )}
 
-      {activeTab === "manage" && (
+      {activeTab === "resources" && (
+        <div className="pazza-placeholder">
+          <h2>Resources</h2>
+          <p>This section is not required, but the tab remains available.</p>
+        </div>
+      )}
+
+      {activeTab === "statistics" && (
+        <div className="pazza-placeholder">
+          <h2>Statistics</h2>
+          <p>This section is not required, but the tab remains available.</p>
+        </div>
+      )}
+
+      {activeTab === "manage" && isInstructor && (
         <ManageClassModal
           courseId={cid}
           folders={folders}
